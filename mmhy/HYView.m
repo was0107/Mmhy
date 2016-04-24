@@ -56,6 +56,10 @@
     static int x = 255;
     NSInteger pointx = point.x/4 * 4;
     NSInteger pointy = point.y/4 * 4;
+    if (pointy > height || pointx > width) {
+        NSLog(@"wroing aera!");
+        return;
+    }
     dispatch_async(dispatch_queue_create("my.concurrent.queue", DISPATCH_QUEUE_CONCURRENT), ^{
         CGImageRef inputCGImage = [weakSelf.image CGImage];
 
