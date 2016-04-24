@@ -54,6 +54,8 @@
 - (void) drawOnPoint:(CGPoint) point {
     __weak typeof(self) weakSelf = self;
     static int x = 255;
+    NSInteger pointx = point.x/4 * 4;
+    NSInteger pointy = point.y/4 * 4;
     dispatch_async(dispatch_queue_create("my.concurrent.queue", DISPATCH_QUEUE_CONCURRENT), ^{
         CGImageRef inputCGImage = [weakSelf.image CGImage];
 
@@ -72,10 +74,10 @@
         // 4.
         CGContextDrawImage(context, CGRectMake(0, 0, width, height), inputCGImage);
         
-        UInt32 *currentPixel = pixels + (int)(point.x) + (int)(point.y) * width;
+        UInt32 *currentPixel = pixels + pointx + pointy * width;
         
         for (int i = 0 ; i < 1; i++) {
-            [self floodFillScanLineWithStack:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(x, 255-x, 255-x, 255) oldColor:*currentPixel];
+            [self floodFillScanLineWithStack:pointx y:pointy newColor:RGBAMake(x, 255-x, 255-x, 255) oldColor:*currentPixel];
             x-= 20;
             if (x<0) {
                 x = 255;
@@ -167,8 +169,10 @@
         y = [self popY];
         
         y1 = y;
+        
         while(y1 >= 0 && [self compare:[self getColorX:x y:y1] old:oldColor])
             y1--; // go to line top/bottom
+        
         y1++; // start from line starting point pixel
         spanLeft = spanRight = false;
         
@@ -202,7 +206,7 @@
 }
 
 - (BOOL) compare:(UInt32) new old:(UInt32) old {
-    static float eff = 8.0f;
+    static float eff = 18.0f;
     if(R(old) - R(new) < eff &&
        G(old) - G(new) < eff &&
        B(old) - B(new) < eff)

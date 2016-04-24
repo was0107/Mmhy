@@ -20,27 +20,26 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"详情";
+    self.view.backgroundColor = [UIColor whiteColor];
     self.hyView = [[HYView alloc] initWithFrame:CGRectMake(0, 0, 300, 400)];
     self.hyView.image = [UIImage imageNamed:self.imageName];
-    
     CGImageRef inputCGImage = [self.hyView.image CGImage];
     NSUInteger width  = CGImageGetWidth(inputCGImage);
     NSUInteger height = CGImageGetHeight(inputCGImage);
     self.hyView.frame = CGRectMake(self.hyView.frame.origin.x, self.hyView.frame.origin.y, width, height);
     
-    
     self.scrollView = [[UIScrollView alloc] initWithFrame:self.view.bounds];
     self.scrollView.contentSize = self.hyView.bounds.size;
     self.scrollView.delegate = self;
     [self.scrollView addSubview:self.hyView];
-    [self.scrollView setZoomScale:1.0f];
     [self.scrollView setMaximumZoomScale:5.0f];
-    [self.scrollView setMinimumZoomScale:1.0f];
-    
+    CGFloat scale = self.view.bounds.size.width/width;
+    [self.scrollView setMinimumZoomScale:scale];
     [self.scrollView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(gesture:)]];
 
     [self.view addSubview:self.scrollView];
-    self.view.backgroundColor = [UIColor whiteColor];
+    
+    [self.scrollView setZoomScale:scale animated:YES] ;
     // Do any additional setup after loading the view, typically from a nib.
 }
 
@@ -50,11 +49,9 @@
 
 - (void) gesture:(UIGestureRecognizer *) recognizer {
     CGPoint point = [recognizer locationInView:self.scrollView];
-    NSLog(@"====%@", NSStringFromCGPoint(point));
-
+//    NSLog(@"====%@", NSStringFromCGPoint(point));
     point = CGPointMake(point.x/self.scrollView.zoomScale, point.y/self.scrollView.zoomScale);
-    NSLog(@"%@", NSStringFromCGPoint(point));
-
+//    NSLog(@"%@", NSStringFromCGPoint(point));
     [self.hyView drawOnPoint:point];
 }
 
