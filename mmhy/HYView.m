@@ -24,6 +24,7 @@
 
 @implementation HYView {
     NSMutableData *_data;
+    NSMutableDictionary *_path;
     NSUInteger width,height;
     UInt32 * pixels;
 }
@@ -35,69 +36,75 @@
     self.backgroundColor = [UIColor greenColor];
     self.userInteractionEnabled = YES;
     self.contentMode = UIViewContentModeCenter;
-    [self addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(gesture:)]];
-    
+    _path = [NSMutableDictionary dictionaryWithCapacity:10];
     return self;
 }
 
 - (void) setImage:(UIImage *)image {
     [super setImage:image];
     if (image) {
-       
         CGImageRef inputCGImage = [image CGImage];
-        NSUInteger width  = CGImageGetWidth(inputCGImage);
-        NSUInteger height = CGImageGetHeight(inputCGImage);
-        self.frame = CGRectMake(self.frame.origin.x, self.frame.origin.y, width, height);
+        width  = CGImageGetWidth(inputCGImage) ;
+        height = CGImageGetHeight(inputCGImage) ;
+
     }
 
 }
 
+- (void) drawOnPoint:(CGPoint) point {
+    __weak typeof(self) weakSelf = self;
+    static int x = 255;
+    dispatch_async(dispatch_queue_create("my.concurrent.queue", DISPATCH_QUEUE_CONCURRENT), ^{
+        CGImageRef inputCGImage = [weakSelf.image CGImage];
+
+        // 2.
+        NSUInteger bytesPerPixel = 4;
+        NSUInteger bytesPerRow = bytesPerPixel * width;
+        NSUInteger bitsPerComponent = 8;
+        
+        pixels = (UInt32 *) calloc(height * width, sizeof(UInt32));
+        
+        // 3.
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        CGContextRef context = CGBitmapContextCreate(pixels, width , height, bitsPerComponent, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+        CGColorSpaceRelease(colorSpace);
+        
+        // 4.
+        CGContextDrawImage(context, CGRectMake(0, 0, width, height), inputCGImage);
+        
+        UInt32 *currentPixel = pixels + (int)(point.x) + (int)(point.y) * width;
+        
+        for (int i = 0 ; i < 1; i++) {
+            [self floodFillScanLineWithStack:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(x, 255-x, 255-x, 255) oldColor:*currentPixel];
+            x-= 20;
+            if (x<0) {
+                x = 255;
+            }
+            //    [self floodFill4:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(255, 0, 0, 255) oldColor:*currentPixel];
+            //    [self floodFill8:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(255, 0, 0, 255) oldColor:*currentPixel];
+        }
+        
+        CGImageRef processedCGImage = CGBitmapContextCreateImage(context);
+        UIImage *image = [UIImage imageWithCGImage:processedCGImage];
+        CGContextRelease(context);
+        CGImageRelease(processedCGImage);
+        free(pixels);
+        pixels = NULL;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            weakSelf.image = image;
+        });
+    });   
+}
+
 - (void) gesture:(UIGestureRecognizer *) recognizer {
-    CGPoint point = [recognizer locationInView:self];
-    NSLog(@"%@", NSStringFromCGPoint(point));
-    
-//    UIImage *beginImage = [UIImage imageWithData:UIImagePNGRepresentation(self.image)];
-    
-    CGImageRef inputCGImage = [self.image CGImage];
-    float scaleFactor = 1.0f;//[[UIScreen mainScreen] scale];
-     width  = CGImageGetWidth(inputCGImage) * scaleFactor;
-     height = CGImageGetHeight(inputCGImage) * scaleFactor;
-    
-    // 2.
-    NSUInteger bytesPerPixel = 4;
-    NSUInteger bytesPerRow = bytesPerPixel * width;
-    NSUInteger bitsPerComponent = 8;
-
-    pixels = (UInt32 *) calloc(height * width,sizeof(UInt32));
-    
-    // 3.
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    CGContextRef context = CGBitmapContextCreate(pixels, width , height, bitsPerComponent, bytesPerRow, colorSpace,     kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
-    CGColorSpaceRelease(colorSpace);
-
-    // 4.
-    CGContextDrawImage(context, CGRectMake(0, 0, width, height), inputCGImage);
-    
-    UInt32 *currentPixel = pixels + (int)(point.x) + (int)(point.y) * width;
-
-    [self floodFillScanLineWithStack:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(255, 0, 0, 255) oldColor:*currentPixel];
-//    [self floodFill4:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(255, 0, 0, 255) oldColor:*currentPixel];
-//    [self floodFill8:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(255, 0, 0, 255) oldColor:*currentPixel];
-
-    // 5. Cleanup
-
-    CGImageRef processedCGImage = CGBitmapContextCreateImage(context);
-    self.image = [UIImage imageWithCGImage:processedCGImage];
-    CGContextRelease(context);
-    CGImageRelease(processedCGImage);
-    free(pixels);
-    pixels = NULL;
+    CGPoint point = [recognizer locationInView:self.superview];
+    [self drawOnPoint:point];
 }
 - (void) floodFill4:(NSInteger) x y:(NSInteger)y newColor:(UInt32) newColor oldColor:(UInt32) oldColor {
-//    if(oldColor == newColor) {
-//        printf("do nothing !!!, filled area!!");
-//        return;
-//    }
+    if(oldColor == newColor) {
+        printf("do nothing !!!, filled area!!");
+        return;
+    }
     
     if(x >= 0 &&
        x < width &&
@@ -126,13 +133,7 @@
        y < height &&
        [self compare:[self getColorX:x y:y] old:oldColor])
     {
-//        for (int i = -10 ; i < 10; i++) {
-//            for (int j = -10; j < 10; j++) {
-                [self setColorX:x y:y color:newColor];
-//            }
-//        }
         [self setColorX:x y:y color:newColor];
-        
         [self floodFill8:x+1 y:y newColor:newColor oldColor:oldColor];
         [self floodFill8:x-1 y:y newColor:newColor oldColor:oldColor];
         [self floodFill8:x y:y+1 newColor:newColor oldColor:oldColor];
@@ -201,13 +202,10 @@
 }
 
 - (BOOL) compare:(UInt32) new old:(UInt32) old {
-    
-//    return new == old;
-    
-    static int eff = 5;
-    if(fabs(R(new) - R(old)) < eff &&
-       fabs(G(new) - G(old)) < eff &&
-       fabs(B(new) - B(old)) < eff)
+    static float eff = 8.0f;
+    if(R(old) - R(new) < eff &&
+       G(old) - G(new) < eff &&
+       B(old) - B(new) < eff)
         return YES;
     return NO;
 }
