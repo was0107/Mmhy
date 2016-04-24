@@ -26,7 +26,7 @@
     CGImageRef inputCGImage = [self.hyView.image CGImage];
     NSUInteger width  = CGImageGetWidth(inputCGImage);
     NSUInteger height = CGImageGetHeight(inputCGImage);
-    self.hyView.frame = CGRectMake(self.hyView.frame.origin.x, self.hyView.frame.origin.y, width, height);
+    self.hyView.frame = CGRectMake(self.hyView.frame.origin.x, 0, width, height);
     
     self.scrollView = [[UIScrollView alloc] initWithFrame:self.view.bounds];
     self.scrollView.contentSize = self.hyView.bounds.size;
