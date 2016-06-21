@@ -1,21 +1,20 @@
 //
-//  ViewController.m
+//  PaintViewController.m
 //  mmhy
 //
-//  Created by Micker on 16/4/23.
+//  Created by Micker on 16/6/22.
 //  Copyright © 2016年 micker. All rights reserved.
 //
 
-#import "ViewController.h"
+#import "PaintViewController.h"
 #import "HYView.h"
 
-
-@interface ViewController ()<UIScrollViewDelegate>
+@interface PaintViewController ()<UIScrollViewDelegate>
 @property (nonatomic, strong) HYView *hyView;
 @property (nonatomic, strong) UIScrollView *scrollView;
 @end
 
-@implementation ViewController
+@implementation PaintViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -28,7 +27,7 @@
     NSUInteger height = CGImageGetHeight(inputCGImage);
     self.hyView.frame = CGRectMake(self.hyView.frame.origin.x, 0, width, height);
     
-    self.scrollView = [[UIScrollView alloc] initWithFrame:self.view.bounds];
+    self.scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds)-64)];
     self.scrollView.contentSize = self.hyView.bounds.size;
     self.scrollView.delegate = self;
     [self.scrollView addSubview:self.hyView];
@@ -36,9 +35,7 @@
     CGFloat scale = self.view.bounds.size.width/width;
     [self.scrollView setMinimumZoomScale:scale];
     [self.scrollView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(gesture:)]];
-
     [self.view addSubview:self.scrollView];
-    
     [self.scrollView setZoomScale:scale animated:YES] ;
     // Do any additional setup after loading the view, typically from a nib.
 }
@@ -49,9 +46,7 @@
 
 - (void) gesture:(UIGestureRecognizer *) recognizer {
     CGPoint point = [recognizer locationInView:self.scrollView];
-//    NSLog(@"====%@", NSStringFromCGPoint(point));
     point = CGPointMake(point.x/self.scrollView.zoomScale, point.y/self.scrollView.zoomScale);
-//    NSLog(@"%@", NSStringFromCGPoint(point));
     [self.hyView drawOnPoint:point];
 }
 

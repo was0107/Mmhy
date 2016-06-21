@@ -155,14 +155,36 @@
 
 - (void) floodFillScanLineWithStack:(NSInteger) x y:(NSInteger)y newColor:(UInt32) newColor oldColor:(UInt32) oldColor
 {
-    if(oldColor == newColor) {
+    if(newColor == oldColor) {
         printf("do nothing !!!, filled area!!");
         return;
     }
+    [self.xStack removeAllObjects];
     [self.yStack removeAllObjects];
     
     NSInteger y1;
     BOOL spanLeft, spanRight;
+    static int radius = 0;
+    int colorR=R(oldColor), colorG=G(oldColor),colorB=B(oldColor), size = 1;
+    for (int i = -radius; i < radius; i++) {
+        for (int j = -radius; j < radius; j++) {
+            if((x+i >= 0 && x+i < width) &&
+               (y+j >= 0 && y+j < height) &&
+               [self compare:[self getColorX:x+i y:y+j] old:oldColor]) {
+                UInt32 color = [self getColorX:x+i y:y+j];
+                colorR+=R(color);
+                colorG+=G(color);
+                colorB+=B(color);
+                size++;
+            }
+        }
+    }
+    UInt32 roundColor = RGBAMake(colorR/size, colorG/size, colorB/size,A(oldColor));
+    
+    printf("old = %d %d,%d\n", R(oldColor),G(oldColor),B(oldColor));
+    printf("roud = %d %d,%d\n\n\n", R(roundColor),G(roundColor),B(roundColor));
+    
+    
     [self pushX:x y:y];
     
     while(true)
@@ -174,33 +196,33 @@
         
         y1 = y;
         
-        while(y1 >= 0 && [self compare:[self getColorX:x y:y1] old:oldColor])
+        while(y1 >= 0 && [self compare:[self getColorX:x y:y1] old:roundColor])
             y1--; // go to line top/bottom
         
         y1++; // start from line starting point pixel
         spanLeft = spanRight = false;
         
         
-        while(y1 < height && [self compare:[self getColorX:x y:y1] old:oldColor])
+        while(y1 < height && [self compare:[self getColorX:x y:y1] old:roundColor])
         {
             [self setColorX:x y:y1 color:newColor];
             
-            if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1] old:oldColor])// just keep left line once in the stack
+            if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1] old:roundColor])// just keep left line once in the stack
             {
                 [self pushX:x-1 y:y1];
                 spanLeft = true;
             }
-            if(spanLeft && x > 0 && ![self compare:[self getColorX:x-1 y:y1] old:oldColor])
+            else if(spanLeft && x > 0 && ![self compare:[self getColorX:x-1 y:y1] old:roundColor])
             {
                 spanLeft = false;
             }
             
-            if(!spanRight && x < width - 1 && [self compare:[self getColorX:x+1 y:y1] old:oldColor]) // just keep right line once in the stack
+            if(!spanRight && x < width - 1 && [self compare:[self getColorX:x+1 y:y1] old:roundColor]) // just keep right line once in the stack
             {
                 [self pushX:x+1 y:y1];
                 spanRight = true;
             }
-            else if(spanRight && x < width - 1 && ![self compare:[self getColorX:x+1 y:y1] old:oldColor])
+            else if(spanRight && x < width - 1 && ![self compare:[self getColorX:x+1 y:y1] old:roundColor])
             {
                 spanRight = false;
             }
@@ -210,7 +232,7 @@
 }
 
 - (BOOL) compare:(UInt32) new old:(UInt32) old {
-    static float eff = 18.0f;
+    static float eff = 38.0f;
     if(R(old) - R(new) < eff &&
        G(old) - G(new) < eff &&
        B(old) - B(new) < eff)
