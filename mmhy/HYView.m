@@ -27,7 +27,9 @@
     NSMutableDictionary *_path;
     NSUInteger width,height;
     UInt32 * pixels;
+    UInt32 * _originPixels;
     UIImage *_originImage;
+    NSLock *_lock;
 }
 
 - (id) initWithFrame:(CGRect)frame {
@@ -38,6 +40,7 @@
     self.userInteractionEnabled = YES;
     self.contentMode = UIViewContentModeCenter;
     _path = [NSMutableDictionary dictionaryWithCapacity:10];
+    _lock = [[NSLock alloc] init];
     return self;
 }
 
@@ -64,9 +67,10 @@
         NSLog(@"wroing aera!");
         return;
     }
-    
-    UIImage *originImage = _originImage;
+    UIImage *originImage = self.image;
     dispatch_async(dispatch_queue_create("my.concurrent.queue", DISPATCH_QUEUE_CONCURRENT), ^{
+        
+        [_lock lock];
         CGImageRef inputCGImage = [originImage CGImage];
 
         // 2.
@@ -75,6 +79,7 @@
         NSUInteger bitsPerComponent = 8;
         
         pixels = (UInt32 *) calloc(height * width, sizeof(UInt32));
+        _originPixels = (UInt32 *) calloc(height * width, sizeof(UInt32));
         
         // 3.
         CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
@@ -83,7 +88,7 @@
         
         // 4.
         CGContextDrawImage(context, CGRectMake(0, 0, width, height), inputCGImage);
-        
+
         UInt32 *currentPixel = pixels + pointx + pointy * width;
         
         for (int i = 0 ; i < 1; i++) {
@@ -104,6 +109,7 @@
         pixels = NULL;
         dispatch_async(dispatch_get_main_queue(), ^{
             weakSelf.image = image;
+            [_lock unlock];
         });
     });   
 }
@@ -166,9 +172,9 @@
         printf("do nothing !!!, filled area!!");
         return;
     }
-    [self.xStack removeAllObjects];
-    [self.yStack removeAllObjects];
+    NSInteger originX = x, originY = y;
     
+    NSLog(@"start===");
     NSInteger y1;
     BOOL spanLeft, spanRight;
     static int radius = 0;
@@ -191,51 +197,118 @@
     printf("old = %d %d,%d\n", R(oldColor),G(oldColor),B(oldColor));
     printf("roud = %d %d,%d\n\n\n", R(roundColor),G(roundColor),B(roundColor));
     
+    NSUInteger MINX = width, MINY = height;
+    NSUInteger MAXX = 0, MAXY = 0;
     
-    [self pushX:x y:y];
-    
-    while(true)
     {
-        x = [self popX];
-        if(x == -1)
-            break;
-        y = [self popY];
+        [self.xStack removeAllObjects];
+        [self.yStack removeAllObjects];
         
-        y1 = y;
-        
-        while(y1 >= 0 && [self compare:[self getColorX:x y:y1] old:roundColor])
-            y1--; // go to line top/bottom
-        
-        y1++; // start from line starting point pixel
-        spanLeft = spanRight = false;
-        
-        
-        while(y1 < height && [self compare:[self getColorX:x y:y1] old:roundColor])
+        [self pushX:originX y:originY];
+        NSMutableArray *points = [NSMutableArray arrayWithCapacity:10];
+        while(true)
         {
-            [self setColorX:x y:y1 color:newColor];
+            x = [self popX];
+            if(x == -1)
+                break;
+            y = [self popY];
             
-            if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1] old:roundColor])// just keep left line once in the stack
+            y1 = y;
+            
+            while(y1 >= 0 && [self compare:[self getColorX:x y:y1] old:roundColor])
+                y1--; // go to line top/bottom
+            
+            y1++; // start from line starting point pixel
+            spanLeft = spanRight = false;
+            MINY = MIN(y1,MINY);
+            MAXY = MAX(y1,MAXY);
+            
+            
+            while(y1 < height && [self compare:[self getColorX:x y:y1] old:roundColor])
             {
-                [self pushX:x-1 y:y1];
-                spanLeft = true;
+                //            [self setColorX:x y:y1 color:newColor];
+                if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1] old:roundColor] && ![points containsObject:@(x-1)])// just keep left line once in the stack
+                {
+                    
+                    [self pushX:x-1 y:y1];
+                    MINX = MIN(x-1,MINX);
+                    spanLeft = true;
+                }
+                else if(spanLeft && x > 0 && ![self compare:[self getColorX:x-1 y:y1] old:roundColor])
+                {
+                    spanLeft = false;
+                }
+                
+                if(!spanRight && x < width - 1 && [self compare:[self getColorX:x+1 y:y1] old:roundColor] && ![points containsObject:@(x+1)]) // just keep right line once in the stack
+                {
+                    [self pushX:x+1 y:y1];
+                    MAXX = MAX(x+1,MAXX);
+                    spanRight = true;
+                }
+                else if(spanRight && x < width - 1 && ![self compare:[self getColorX:x+1 y:y1] old:roundColor])
+                {
+                    spanRight = false;
+                }
+                y1++;
+                
+                if (![points containsObject:@(x)]) {
+                    [points addObject:@(x)];
+                }
+                MAXY = MAX(y1,MAXY);
             }
-            else if(spanLeft && x > 0 && ![self compare:[self getColorX:x-1 y:y1] old:roundColor])
-            {
-                spanLeft = false;
-            }
-        
-            if(!spanRight && x < width - 1 && [self compare:[self getColorX:x+1 y:y1] old:roundColor]) // just keep right line once in the stack
-            {
-                [self pushX:x+1 y:y1];
-                spanRight = true;
-            }
-            else if(spanRight && x < width - 1 && ![self compare:[self getColorX:x+1 y:y1] old:roundColor])
-            {
-                spanRight = false;
-            }
-            y1++;
         }
+        NSLog(@"MINX,MAXX, MINY,MAXY = %ld, %ld, %ld, %ld",MINX,MAXX, MINY,MAXY);
     }
+    {
+        [self.xStack removeAllObjects];
+        [self.yStack removeAllObjects];
+        
+        [self pushX:originX y:originY];
+
+        while(true)
+        {
+            x = [self popX];
+            if(x == -1)
+                break;
+            y = [self popY];
+            
+            y1 = y;
+            
+            while(y1 >= 0 && [self compare:[self getColorX:x y:y1] old:roundColor])
+                y1--; // go to line top/bottom
+            
+            y1++; // start from line starting point pixel
+            spanLeft = spanRight = false;
+            
+            while(y1 < height && [self compare:[self getColorX:x y:y1] old:roundColor])
+            {
+                [self setColorX:x y:y1 color:newColor];
+                if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1] old:roundColor])// just keep left line once in the stack
+                {
+                    [self pushX:x-1 y:y1];
+                    spanLeft = true;
+                }
+                else if(spanLeft && x > 0 && ![self compare:[self getColorX:x-1 y:y1] old:roundColor])
+                {
+                    spanLeft = false;
+                }
+                
+                if(!spanRight && x < width - 1 && [self compare:[self getColorX:x+1 y:y1] old:roundColor]) // just keep right line once in the stack
+                {
+                    [self pushX:x+1 y:y1];
+                    spanRight = true;
+                }
+                else if(spanRight && x < width - 1 && ![self compare:[self getColorX:x+1 y:y1] old:roundColor])
+                {
+                    spanRight = false;
+                }
+                y1++;
+            }
+        }
+        
+    }
+    
+    NSLog(@"end===");
 }
 
 - (BOOL) compare:(UInt32) new old:(UInt32) old {
