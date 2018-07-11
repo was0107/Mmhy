@@ -13,6 +13,7 @@
 		627604C01CCBC13900D741AE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 627604BF1CCBC13900D741AE /* Assets.xcassets */; };
 		627604C31CCBC13900D741AE /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 627604C11CCBC13900D741AE /* LaunchScreen.storyboard */; };
 		627604CC1CCBC14F00D741AE /* HYView.m in Sources */ = {isa = PBXBuildFile; fileRef = 627604CB1CCBC14F00D741AE /* HYView.m */; };
+		62A277612080AA5D00196C1A /* MTLView.m in Sources */ = {isa = PBXBuildFile; fileRef = 62A277602080AA5D00196C1A /* MTLView.m */; };
 		62C758741D19ACE300483D3A /* 1.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 62C758701D19ACE300483D3A /* 1.jpg */; };
 		62C758751D19ACE300483D3A /* fgjx.png in Resources */ = {isa = PBXBuildFile; fileRef = 62C758711D19ACE300483D3A /* fgjx.png */; };
 		62C758761D19ACE300483D3A /* mdh.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 62C758721D19ACE300483D3A /* mdh.jpg */; };
@@ -33,6 +34,8 @@
 		627604C41CCBC13900D741AE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		627604CA1CCBC14F00D741AE /* HYView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HYView.h; sourceTree = "<group>"; };
 		627604CB1CCBC14F00D741AE /* HYView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HYView.m; sourceTree = "<group>"; };
+		62A2775F2080AA5D00196C1A /* MTLView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MTLView.h; sourceTree = "<group>"; };
+		62A277602080AA5D00196C1A /* MTLView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MTLView.m; sourceTree = "<group>"; };
 		62C758701D19ACE300483D3A /* 1.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 1.jpg; sourceTree = "<group>"; };
 		62C758711D19ACE300483D3A /* fgjx.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = fgjx.png; sourceTree = "<group>"; };
 		62C758721D19ACE300483D3A /* mdh.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = mdh.jpg; sourceTree = "<group>"; };
@@ -77,6 +80,8 @@
 			children = (
 				627604CA1CCBC14F00D741AE /* HYView.h */,
 				627604CB1CCBC14F00D741AE /* HYView.m */,
+				62A2775F2080AA5D00196C1A /* MTLView.h */,
+				62A277602080AA5D00196C1A /* MTLView.m */,
 				627604B61CCBC13900D741AE /* AppDelegate.h */,
 				627604B71CCBC13900D741AE /* AppDelegate.m */,
 				62C758781D19AFDF00483D3A /* MainViewController.h */,
@@ -137,6 +142,8 @@
 				TargetAttributes = {
 					627604AF1CCBC13900D741AE = {
 						CreatedOnToolsVersion = 7.3;
+						DevelopmentTeam = 432R882V66;
+						ProvisioningStyle = Manual;
 					};
 				};
 			};
@@ -183,6 +190,7 @@
 				62C7587A1D19AFDF00483D3A /* MainViewController.m in Sources */,
 				627604B81CCBC13900D741AE /* AppDelegate.m in Sources */,
 				62C758801D19B58D00483D3A /* PaintViewController.m in Sources */,
+				62A277612080AA5D00196C1A /* MTLView.m in Sources */,
 				627604B51CCBC13900D741AE /* main.m in Sources */,
 				62C7587D1D19B08100483D3A /* MainCollectionViewCell.m in Sources */,
 				627604CC1CCBC14F00D741AE /* HYView.m in Sources */,
@@ -299,10 +307,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = 432R882V66;
 				INFOPLIST_FILE = mmhy/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = cn.micker.mmhy;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "9606b48c-d21b-47ca-b11f-d4cdfa95171d";
+				PROVISIONING_PROFILE_SPECIFIER = micker_wiled;
 			};
 			name = Debug;
 		};
@@ -310,10 +322,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = 432R882V66;
 				INFOPLIST_FILE = mmhy/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = cn.micker.mmhy;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "9606b48c-d21b-47ca-b11f-d4cdfa95171d";
+				PROVISIONING_PROFILE_SPECIFIER = micker_wiled;
 			};
 			name = Release;
 		};

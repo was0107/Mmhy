@@ -25,14 +25,6 @@
     _datas = @[@"1.jpg",
                @"rect",
                @"fgjx.png",
-               @"fgjx.png",
-               @"fgjx.png",
-               @"fgjx.png",
-               @"fgjx.png",
-               @"fgjx.png",
-               @"fgjx.png",
-               @"fgjx.png",
-               @"fgjx.png",
                @"mdh.jpg"];
     
     [self.view addSubview:self.collectionView];
