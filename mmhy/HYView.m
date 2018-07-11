@@ -27,6 +27,7 @@
     NSMutableDictionary *_path;
     NSUInteger width,height;
     UInt32 * pixels;
+    UIImage *_originImage;
 }
 
 - (id) initWithFrame:(CGRect)frame {
@@ -42,6 +43,9 @@
 
 - (void) setImage:(UIImage *)image {
     [super setImage:image];
+    if (!_originImage) {
+        _originImage = image;
+    }
     if (image) {
         CGImageRef inputCGImage = [image CGImage];
         width  = CGImageGetWidth(inputCGImage) ;
@@ -60,8 +64,10 @@
         NSLog(@"wroing aera!");
         return;
     }
+    
+    UIImage *originImage = _originImage;
     dispatch_async(dispatch_queue_create("my.concurrent.queue", DISPATCH_QUEUE_CONCURRENT), ^{
-        CGImageRef inputCGImage = [weakSelf.image CGImage];
+        CGImageRef inputCGImage = [originImage CGImage];
 
         // 2.
         NSUInteger bytesPerPixel = 4;
@@ -106,6 +112,7 @@
     CGPoint point = [recognizer locationInView:self.superview];
     [self drawOnPoint:point];
 }
+
 - (void) floodFill4:(NSInteger) x y:(NSInteger)y newColor:(UInt32) newColor oldColor:(UInt32) oldColor {
     if(oldColor == newColor) {
         printf("do nothing !!!, filled area!!");
@@ -216,7 +223,7 @@
             {
                 spanLeft = false;
             }
-            
+        
             if(!spanRight && x < width - 1 && [self compare:[self getColorX:x+1 y:y1] old:roundColor]) // just keep right line once in the stack
             {
                 [self pushX:x+1 y:y1];
