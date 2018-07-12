@@ -21,6 +21,7 @@
 		62C7587A1D19AFDF00483D3A /* MainViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 62C758791D19AFDF00483D3A /* MainViewController.m */; };
 		62C7587D1D19B08100483D3A /* MainCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 62C7587C1D19B08100483D3A /* MainCollectionViewCell.m */; };
 		62C758801D19B58D00483D3A /* PaintViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 62C7587F1D19B58D00483D3A /* PaintViewController.m */; };
+		62F03C7920F75B0C00226072 /* MImageHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = 62F03C7820F75B0C00226072 /* MImageHandler.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +47,8 @@
 		62C7587C1D19B08100483D3A /* MainCollectionViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MainCollectionViewCell.m; sourceTree = "<group>"; };
 		62C7587E1D19B58D00483D3A /* PaintViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PaintViewController.h; sourceTree = "<group>"; };
 		62C7587F1D19B58D00483D3A /* PaintViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PaintViewController.m; sourceTree = "<group>"; };
+		62F03C7720F75B0C00226072 /* MImageHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MImageHandler.h; sourceTree = "<group>"; };
+		62F03C7820F75B0C00226072 /* MImageHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MImageHandler.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +83,8 @@
 			children = (
 				627604CA1CCBC14F00D741AE /* HYView.h */,
 				627604CB1CCBC14F00D741AE /* HYView.m */,
+				62F03C7720F75B0C00226072 /* MImageHandler.h */,
+				62F03C7820F75B0C00226072 /* MImageHandler.m */,
 				62A2775F2080AA5D00196C1A /* MTLView.h */,
 				62A277602080AA5D00196C1A /* MTLView.m */,
 				627604B61CCBC13900D741AE /* AppDelegate.h */,
@@ -194,6 +199,7 @@
 				627604B51CCBC13900D741AE /* main.m in Sources */,
 				62C7587D1D19B08100483D3A /* MainCollectionViewCell.m in Sources */,
 				627604CC1CCBC14F00D741AE /* HYView.m in Sources */,
+				62F03C7920F75B0C00226072 /* MImageHandler.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
