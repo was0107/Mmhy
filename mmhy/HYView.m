@@ -30,6 +30,7 @@
     UInt32 * _originPixels;
     UIImage *_originImage;
     NSLock *_lock;
+    NSUInteger MINX, MAXX, MINY, MAXY;
 }
 
 - (id) initWithFrame:(CGRect)frame {
@@ -39,7 +40,6 @@
     self.backgroundColor = [UIColor greenColor];
     self.userInteractionEnabled = YES;
     self.contentMode = UIViewContentModeCenter;
-    _path = [NSMutableDictionary dictionaryWithCapacity:10];
     _lock = [[NSLock alloc] init];
     return self;
 }
@@ -67,11 +67,11 @@
         NSLog(@"wroing aera!");
         return;
     }
-    UIImage *originImage = self.image;
+    UIImage *tmpImage = self.image;
     dispatch_async(dispatch_queue_create("my.concurrent.queue", DISPATCH_QUEUE_CONCURRENT), ^{
         
         [_lock lock];
-        CGImageRef inputCGImage = [originImage CGImage];
+        CGImageRef inputCGImage = [tmpImage CGImage];
 
         // 2.
         NSUInteger bytesPerPixel = 4;
@@ -84,29 +84,38 @@
         // 3.
         CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
         CGContextRef context = CGBitmapContextCreate(pixels, width , height, bitsPerComponent, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+        CGContextRef originContext = CGBitmapContextCreate(_originPixels, width , height, bitsPerComponent, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
         CGColorSpaceRelease(colorSpace);
         
         // 4.
         CGContextDrawImage(context, CGRectMake(0, 0, width, height), inputCGImage);
+        CGContextDrawImage(originContext, CGRectMake(0, 0, width, height), [_originImage CGImage]);
 
         UInt32 *currentPixel = pixels + pointx + pointy * width;
-        
+        UInt32 *originCurrentPixel = _originPixels + pointx + pointy * width;
+
         for (int i = 0 ; i < 1; i++) {
-            [self floodFillScanLineWithStack:pointx y:pointy newColor:RGBAMake(x, 255-x, 255-x, 255) oldColor:*currentPixel];
-            x-= 20;
-            if (x<0) {
-                x = 255;
+            @autoreleasepool{
+                [self doGetRectWithFloodFillScanLineWithStack:pointx y:pointy newColor:RGBAMake(x, 255-x, 255-x, 255) oldColor:*originCurrentPixel];
+                [self floodFillScanLineWithStack:pointx y:pointy newColor:RGBAMake(x, 255-x, 255-x, 255) oldColor:*currentPixel];
+                x-= 40;
+                if (x<0) {
+                    x = 255;
+                }
+                //    [self floodFill4:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(255, 0, 0, 255) oldColor:*currentPixel];
+                //    [self floodFill8:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(255, 0, 0, 255) oldColor:*currentPixel];
             }
-            //    [self floodFill4:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(255, 0, 0, 255) oldColor:*currentPixel];
-            //    [self floodFill8:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(255, 0, 0, 255) oldColor:*currentPixel];
         }
         
         CGImageRef processedCGImage = CGBitmapContextCreateImage(context);
         UIImage *image = [UIImage imageWithCGImage:processedCGImage];
         CGContextRelease(context);
+        CGContextRelease(originContext);
         CGImageRelease(processedCGImage);
         free(pixels);
         pixels = NULL;
+        free(_originPixels);
+        _originPixels = NULL;
         dispatch_async(dispatch_get_main_queue(), ^{
             weakSelf.image = image;
             [_lock unlock];
@@ -166,25 +175,17 @@
     }
 }
 
-- (void) floodFillScanLineWithStack:(NSInteger) x y:(NSInteger)y newColor:(UInt32) newColor oldColor:(UInt32) oldColor
-{
-    if(newColor == oldColor) {
-        printf("do nothing !!!, filled area!!");
-        return;
-    }
-    NSInteger originX = x, originY = y;
+
+- (UInt32) roundColorX:(NSInteger)x y:(NSInteger)y color:(UInt32) color pixels:(UInt32 *) pix {
     
-    NSLog(@"start===");
-    NSInteger y1;
-    BOOL spanLeft, spanRight;
     static int radius = 0;
-    int colorR=R(oldColor), colorG=G(oldColor),colorB=B(oldColor), size = 1;
+    int colorR=R(color), colorG=G(color),colorB=B(color), size = 1;
     for (int i = -radius; i < radius; i++) {
         for (int j = -radius; j < radius; j++) {
             if((x+i >= 0 && x+i < width) &&
                (y+j >= 0 && y+j < height) &&
-               [self compare:[self getColorX:x+i y:y+j] old:oldColor]) {
-                UInt32 color = [self getColorX:x+i y:y+j];
+               [self compare:[self getColorX:x+i y:y+j pixels:pix] old:color]) {
+                UInt32 color = [self getColorX:x+i y:y+j pixels:pix];
                 colorR+=R(color);
                 colorG+=G(color);
                 colorB+=B(color);
@@ -192,140 +193,155 @@
             }
         }
     }
-    UInt32 roundColor = RGBAMake(colorR/size, colorG/size, colorB/size,A(oldColor));
-    
-    printf("old = %d %d,%d\n", R(oldColor),G(oldColor),B(oldColor));
-    printf("roud = %d %d,%d\n\n\n", R(roundColor),G(roundColor),B(roundColor));
-    
-    NSUInteger MINX = width, MINY = height;
-    NSUInteger MAXX = 0, MAXY = 0;
-    
-    {
-        [self.xStack removeAllObjects];
-        [self.yStack removeAllObjects];
-        
-        [self pushX:originX y:originY];
-        NSMutableArray *points = [NSMutableArray arrayWithCapacity:10];
-        while(true)
-        {
-            x = [self popX];
-            if(x == -1)
-                break;
-            y = [self popY];
-            
-            y1 = y;
-            
-            while(y1 >= 0 && [self compare:[self getColorX:x y:y1] old:roundColor])
-                y1--; // go to line top/bottom
-            
-            y1++; // start from line starting point pixel
-            spanLeft = spanRight = false;
-            MINY = MIN(y1,MINY);
-            MAXY = MAX(y1,MAXY);
-            
-            
-            while(y1 < height && [self compare:[self getColorX:x y:y1] old:roundColor])
-            {
-                //            [self setColorX:x y:y1 color:newColor];
-                if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1] old:roundColor] && ![points containsObject:@(x-1)])// just keep left line once in the stack
-                {
-                    
-                    [self pushX:x-1 y:y1];
-                    MINX = MIN(x-1,MINX);
-                    spanLeft = true;
-                }
-                else if(spanLeft && x > 0 && ![self compare:[self getColorX:x-1 y:y1] old:roundColor])
-                {
-                    spanLeft = false;
-                }
-                
-                if(!spanRight && x < width - 1 && [self compare:[self getColorX:x+1 y:y1] old:roundColor] && ![points containsObject:@(x+1)]) // just keep right line once in the stack
-                {
-                    [self pushX:x+1 y:y1];
-                    MAXX = MAX(x+1,MAXX);
-                    spanRight = true;
-                }
-                else if(spanRight && x < width - 1 && ![self compare:[self getColorX:x+1 y:y1] old:roundColor])
-                {
-                    spanRight = false;
-                }
-                y1++;
-                
-                if (![points containsObject:@(x)]) {
-                    [points addObject:@(x)];
-                }
-                MAXY = MAX(y1,MAXY);
-            }
-        }
-        NSLog(@"MINX,MAXX, MINY,MAXY = %ld, %ld, %ld, %ld",MINX,MAXX, MINY,MAXY);
-    }
-    {
-        [self.xStack removeAllObjects];
-        [self.yStack removeAllObjects];
-        
-        [self pushX:originX y:originY];
+    return RGBAMake(colorR/size, colorG/size, colorB/size,A(color));
+}
 
-        while(true)
-        {
-            x = [self popX];
-            if(x == -1)
-                break;
-            y = [self popY];
-            
-            y1 = y;
-            
-            while(y1 >= 0 && [self compare:[self getColorX:x y:y1] old:roundColor])
-                y1--; // go to line top/bottom
-            
-            y1++; // start from line starting point pixel
-            spanLeft = spanRight = false;
-            
-            while(y1 < height && [self compare:[self getColorX:x y:y1] old:roundColor])
-            {
-                [self setColorX:x y:y1 color:newColor];
-                if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1] old:roundColor])// just keep left line once in the stack
-                {
-                    [self pushX:x-1 y:y1];
-                    spanLeft = true;
-                }
-                else if(spanLeft && x > 0 && ![self compare:[self getColorX:x-1 y:y1] old:roundColor])
-                {
-                    spanLeft = false;
-                }
-                
-                if(!spanRight && x < width - 1 && [self compare:[self getColorX:x+1 y:y1] old:roundColor]) // just keep right line once in the stack
-                {
-                    [self pushX:x+1 y:y1];
-                    spanRight = true;
-                }
-                else if(spanRight && x < width - 1 && ![self compare:[self getColorX:x+1 y:y1] old:roundColor])
-                {
-                    spanRight = false;
-                }
-                y1++;
-            }
-        }
-        
-    }
+- (void) doGetRectWithFloodFillScanLineWithStack:(NSInteger) x y:(NSInteger)y newColor:(UInt32) newColor oldColor:(UInt32) oldColor {
     
-    NSLog(@"end===");
+    NSInteger originX = x, originY = y;
+    UInt32 roundColor = [self roundColorX:x y:y color:oldColor pixels:_originPixels];
+    NSInteger y1;
+    BOOL spanLeft, spanRight;
+
+    MINX = width, MINY = height;
+    MAXX = MAXY = 0;
+
+    [self.xStack removeAllObjects];
+    [self.yStack removeAllObjects];
+
+    [self pushX:originX y:originY];
+    
+    while(true)
+    {
+        x = [self popX];
+        if(x == -1)
+            break;
+        y = [self popY];
+        
+        y1 = y;
+        while(y1 >= 0 && [self compare:[self getColorX:x y:y1 pixels:_originPixels] old:roundColor])
+            y1--; // go to line top/bottom
+        
+        y1++; // start from line starting point pixel
+        spanLeft = spanRight = false;
+        MINY = MIN(y1,MINY);
+        
+        while(y1 < height && [self compare:[self getColorX:x y:y1 pixels:_originPixels] old:roundColor])
+        {
+            [self setColorX:x y:y1 color:newColor pixels:_originPixels];
+            
+            if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1 pixels:_originPixels] old:roundColor])// just keep left line once in the stack
+            {
+                [self pushX:x-1 y:y1];
+                spanLeft = true;
+            }
+            else if(spanLeft && x > 0 && ![self compare:[self getColorX:x-1 y:y1 pixels:_originPixels] old:roundColor])
+            {
+                spanLeft = false;
+            }
+            
+            if(!spanRight && x < width - 1 && [self compare:[self getColorX:x+1 y:y1 pixels:_originPixels] old:roundColor]) // just keep right line once in the stack
+            {
+                [self pushX:x+1 y:y1];
+                spanRight = true;
+            }
+            else if(spanRight && x < width - 1 && ![self compare:[self getColorX:x+1 y:y1 pixels:_originPixels] old:roundColor])
+            {
+                spanRight = false;
+            }
+            y1++;
+            
+        }
+        MINX = MIN(x,MINX);
+        MAXX = MAX(x,MAXX);
+        MAXY = MAX(y1,MAXY);
+    }
+    NSLog(@"MINX, MAXX, MINY,MAXY= %ld, %ld,%ld, %ld",MINX, MAXX, MINY,MAXY);
+}
+
+- (void) floodFillScanLineWithStack:(NSInteger) x y:(NSInteger)y newColor:(UInt32) newColor oldColor:(UInt32) oldColor
+{
+    if(newColor == oldColor) {
+        printf("do nothing !!!, filled area!!");
+        return;
+    }
+    NSInteger originX = x, originY = y;
+    NSInteger y1;
+    BOOL spanLeft, spanRight;
+    
+    UInt32 roundColor = [self roundColorX:x y:y color:oldColor pixels:pixels];
+    
+    [self.xStack removeAllObjects];
+    [self.yStack removeAllObjects];
+    [self pushX:originX y:originY];
+    
+    while(true)
+    {
+        x = [self popX];
+        if(x == -1)
+            break;
+        y = [self popY];
+        
+        y1 = y;
+        
+        while(y1 >= 0 && [self compare:[self getColorX:x y:y1] old:roundColor])
+            y1--; // go to line top/bottom
+        
+        y1++; // start from line starting point pixel
+        spanLeft = spanRight = false;
+        
+        while(y1 < height && [self compare:[self getColorX:x y:y1] old:roundColor])
+        {
+            [self setColorX:x y:y1 color:newColor];
+            if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1] old:roundColor])// just keep left line once in the stack
+            {
+                [self pushX:x-1 y:y1];
+                spanLeft = true;
+            }
+            else if(spanLeft && x > 0 && ![self compare:[self getColorX:x-1 y:y1] old:roundColor])
+            {
+                spanLeft = false;
+            }
+            
+            if(!spanRight && x < width - 1 && [self compare:[self getColorX:x+1 y:y1] old:roundColor]) // just keep right line once in the stack
+            {
+                [self pushX:x+1 y:y1];
+                spanRight = true;
+            }
+            else if(spanRight && x < width - 1 && ![self compare:[self getColorX:x+1 y:y1] old:roundColor])
+            {
+                spanRight = false;
+            }
+            y1++;
+            
+        }
+    }
 }
 
 - (BOOL) compare:(UInt32) new old:(UInt32) old {
-    static float eff = 38.0f;
-    if(R(old) - R(new) < eff &&
-       G(old) - G(new) < eff &&
-       B(old) - B(new) < eff)
+    static float eff = 18.0f;
+    if(fabs(1.0f * R(old) - R(new)) < eff &&
+       fabs(1.0f * G(old) - G(new)) < eff &&
+       fabs(1.0f * B(old) - B(new)) < eff)
         return YES;
     return NO;
 }
 
 - (UInt32) getColorX:(NSInteger) x y:(NSInteger)y {
-    UInt32 *currentPixel = pixels + x + y * width;
+    return [self getColorX:x y:y pixels:pixels];
+}
+
+- (UInt32) getColorX:(NSInteger) x y:(NSInteger)y pixels:(UInt32 *) pix{
+    UInt32 *currentPixel = pix + x + y * width;
     return *currentPixel;
 }
+
 - (void) setColorX:(NSInteger) x y:(NSInteger)y color:(UInt32) color {
-    UInt32 *currentPixel = pixels + x + y * width;
+    [self setColorX:x y:y color:color pixels:pixels];
+}
+
+- (void) setColorX:(NSInteger) x y:(NSInteger)y color:(UInt32) color  pixels:(UInt32 *) pix {
+    UInt32 *currentPixel = pix + x + y * width;
     *currentPixel = color;
 }
 
