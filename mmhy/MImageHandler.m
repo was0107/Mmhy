@@ -108,7 +108,9 @@
         for (int i = 0 ; i < 1; i++) {
             @autoreleasepool{
                 [self doGetRectWithFloodFillScanLineWithStack:pointx y:pointy newColor:RGBAMake(x, 255-x, 255-x, 255) oldColor:*originCurrentPixel];
-                [self floodFillScanLineWithStack:pointx y:pointy newColor:RGBAMake(x, 255-x, 255-x, 255) oldColor:*currentPixel];
+                CGContextDrawImage(originContext, CGRectMake(0, 0, _width, _height), [_originImage CGImage]);
+                [self floodFillScanLineWithStack:pointx y:pointy newColor:RGBAMake(x, 255-x, 255-x, 255) oldColor:*originCurrentPixel];
+                
                 x-= 40;
                 if (x<0) {
                     x = 255;
@@ -230,7 +232,7 @@
     NSInteger y1;
     BOOL spanLeft, spanRight;
     
-    UInt32 roundColor = [self roundColorX:x y:y color:oldColor pixels:_pixels];
+    UInt32 roundColor = [self roundColorX:x y:y color:oldColor pixels:_originPixels];
     
     [self.xStack removeAllObjects];
     [self.yStack removeAllObjects];
@@ -245,31 +247,36 @@
         
         y1 = y;
         
-        while(y1 >= 0 && [self compare:[self getColorX:x y:y1] old:roundColor])
+        while(y1 >= 0 && [self compare:[self getColorX:x y:y1 pixels:_originPixels] old:roundColor])
             y1--; // go to line top/bottom
         
         y1++; // start from line starting point pixel
         spanLeft = spanRight = false;
         
-        while(y1 < _height && [self compare:[self getColorX:x y:y1] old:roundColor])
+        while(y1 < _height && [self compare:[self getColorX:x y:y1 pixels:_originPixels] old:roundColor])
         {
-            [self setColorX:x y:y1 color:newColor];
-            if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1] old:roundColor])// just keep left line once in the stack
+            [self setColorX:x y:y1 color:newColor  pixels:_originPixels];
+            if (x < MAXX/2 && y1 < MAXY/2) {
+                [self setColorX:x y:y1 color:RGBAMake(124,255,124,255)  pixels:_pixels];
+            } else {
+                [self setColorX:x y:y1 color:newColor  pixels:_pixels];
+            }
+            if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1 pixels:_originPixels] old:roundColor])// just keep left line once in the stack
             {
                 [self pushX:x-1 y:y1];
                 spanLeft = true;
             }
-            else if(spanLeft && x > 0 && ![self compare:[self getColorX:x-1 y:y1] old:roundColor])
+            else if(spanLeft && x > 0 && ![self compare:[self getColorX:x-1 y:y1 pixels:_originPixels] old:roundColor])
             {
                 spanLeft = false;
             }
             
-            if(!spanRight && x < _width - 1 && [self compare:[self getColorX:x+1 y:y1] old:roundColor]) // just keep right line once in the stack
+            if(!spanRight && x < _width - 1 && [self compare:[self getColorX:x+1 y:y1 pixels:_originPixels] old:roundColor]) // just keep right line once in the stack
             {
                 [self pushX:x+1 y:y1];
                 spanRight = true;
             }
-            else if(spanRight && x < _width - 1 && ![self compare:[self getColorX:x+1 y:y1] old:roundColor])
+            else if(spanRight && x < _width - 1 && ![self compare:[self getColorX:x+1 y:y1 pixels:_originPixels] old:roundColor])
             {
                 spanRight = false;
             }
@@ -322,7 +329,7 @@
     }
 }
 - (BOOL) compare:(UInt32) new old:(UInt32) old {
-    static float eff = 18.0f;
+    static float eff = 5.0f;
     if(fabs(1.0f * R(old) - R(new)) < eff &&
        fabs(1.0f * G(old) - G(new)) < eff &&
        fabs(1.0f * B(old) - B(new)) < eff)
