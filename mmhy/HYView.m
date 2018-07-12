@@ -30,10 +30,10 @@
     self.imageHandler.sourceImage = image;
 }
 
-- (void) drawOnPoint:(CGPoint) point {
+- (void) drawAtPoint:(CGPoint) point {
 //    UIColor *color = nil;
-//    CAGradientLayer *layer = nil;
-    [self.imageHandler drawOnPoint:point block:^(UIImage *image) {
+    CAGradientLayer *layer = nil;
+    [self.imageHandler drawAtPoint:point block:^(UIImage *image) {
         self.image = image;
     }];
 }

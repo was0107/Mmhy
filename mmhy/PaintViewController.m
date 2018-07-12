@@ -47,7 +47,7 @@
 - (void) gesture:(UIGestureRecognizer *) recognizer {
     CGPoint point = [recognizer locationInView:self.scrollView];
     point = CGPointMake(point.x/self.scrollView.zoomScale, point.y/self.scrollView.zoomScale);
-    [self.hyView drawOnPoint:point];
+    [self.hyView drawAtPoint:point];
 }
 
 @end

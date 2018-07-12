@@ -21,6 +21,8 @@
 @property (nonatomic, strong) UIImage *originImage;
 @property (nonatomic, strong) NSMutableArray *xStack;
 @property (nonatomic, strong) NSMutableArray *yStack;
+@property (nonatomic, copy) NSArray *colors;
+@property (nonatomic, copy) NSArray *locations;
 @property (nonatomic, assign) NSInteger width;
 @property (nonatomic, assign) NSInteger height;
 @end
@@ -61,7 +63,7 @@
 }
 
 
-- (void) drawOnPoint:(CGPoint) point  block:(void(^)(UIImage *image)) block{
+- (void) drawAtPoint:(CGPoint) point colors:(NSArray *)colors locations:(NSArray *)locations  block:(void(^)(UIImage *image)) block{
     __weak typeof(self) weakSelf = self;
     static int x = 255;
     NSInteger pointx = point.x/4 * 4;
@@ -70,6 +72,10 @@
         NSLog(@"wroing aera!");
         return;
     }
+    
+    self.colors = colors;
+    self.locations = locations;
+    
     UIImage *tmpImage = self.sourceImage;
     dispatch_async(dispatch_queue_create("my.concurrent.queue", DISPATCH_QUEUE_CONCURRENT), ^{
         
@@ -82,7 +88,6 @@
         NSUInteger bitsPerComponent = 8;
         
         _pixels = (UInt32 *) calloc(_height * _width, sizeof(UInt32));
-        _originPixels = (UInt32 *) calloc(_height * _width, sizeof(UInt32));
         
         // 3.
         CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
@@ -91,25 +96,31 @@
                                                      bytesPerRow,
                                                      colorSpace,
                                                      kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+        CGContextDrawImage(context, CGRectMake(0, 0, _width, _height), inputCGImage);
+
+        _originPixels = (UInt32 *) calloc(_height * _width, sizeof(UInt32));
         CGContextRef originContext = CGBitmapContextCreate(_originPixels, _width , _height,
                                                            bitsPerComponent,
                                                            bytesPerRow,
                                                            colorSpace,
                                                            kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
-        CGColorSpaceRelease(colorSpace);
-        
-        // 4.
-        CGContextDrawImage(context, CGRectMake(0, 0, _width, _height), inputCGImage);
         CGContextDrawImage(originContext, CGRectMake(0, 0, _width, _height), [_originImage CGImage]);
-        
-        UInt32 *currentPixel = _pixels + pointx + pointy * _width;
         UInt32 *originCurrentPixel = _originPixels + pointx + pointy * _width;
+        CGColorSpaceRelease(colorSpace);
         
         for (int i = 0 ; i < 1; i++) {
             @autoreleasepool{
-                [self doGetRectWithFloodFillScanLineWithStack:pointx y:pointy newColor:RGBAMake(x, 255-x, 255-x, 255) oldColor:*originCurrentPixel];
+                [self doGetRectWithFloodFillScanLineWithStack:pointx
+                                                            y:pointy
+                                                     newColor:RGBAMake(x, 255-x, 255-x, 255)
+                                                     oldColor:*originCurrentPixel];
+                
                 CGContextDrawImage(originContext, CGRectMake(0, 0, _width, _height), [_originImage CGImage]);
-                [self floodFillScanLineWithStack:pointx y:pointy newColor:RGBAMake(x, 255-x, 255-x, 255) oldColor:*originCurrentPixel];
+                
+                [self floodFillScanLineWithStack:pointx
+                                               y:pointy
+                                        newColor:RGBAMake(x, 255-x, 255-x, 255)
+                                        oldColor:*originCurrentPixel];
                 
                 x-= 40;
                 if (x<0) {
@@ -125,15 +136,20 @@
         CGContextRelease(context);
         CGContextRelease(originContext);
         CGImageRelease(processedCGImage);
-        free(_pixels);
-        _pixels = NULL;
-        free(_originPixels);
-        _originPixels = NULL;
+        [self freePoint:_pixels];
+        [self freePoint:_originPixels];
         dispatch_async(dispatch_get_main_queue(), ^{
             !block?:block(image);
             [weakSelf.imageLock unlock];
         });
     });
+}
+
+- (void) freePoint:(UInt32*) point {
+    if (point) {
+        free(point);
+        point = NULL;
+    }
 }
 
 

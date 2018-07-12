@@ -16,6 +16,9 @@
 @property (nonatomic, assign, readonly) NSInteger width;
 @property (nonatomic, assign, readonly) NSInteger height;
 
-- (void) drawOnPoint:(CGPoint) point block:(void(^)(UIImage *image)) block;
+- (void) drawAtPoint:(CGPoint) point
+              colors:(NSArray *)colors
+           locations:(NSArray *)locations
+               block:(void(^)(UIImage *image)) block;
 
 @end
