@@ -31,9 +31,10 @@
 }
 
 - (void) drawAtPoint:(CGPoint) point {
-//    UIColor *color = nil;
+    UIColor *color = nil;
+    CGColorRef colorRef = [UIColor redColor].CGColor;
     CAGradientLayer *layer = nil;
-    [self.imageHandler drawAtPoint:point block:^(UIImage *image) {
+    [self.imageHandler drawAtPoint:point colors:nil locations:nil block:^(UIImage *image) {
         self.image = image;
     }];
 }

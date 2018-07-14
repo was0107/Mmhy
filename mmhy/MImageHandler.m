@@ -16,6 +16,85 @@
 
 #import "MImageHandler.h"
 
+@implementation MColor
+
+- (UInt32) getRGBFromColor:(CGColorRef ) colorRef {
+    const CGFloat *components = CGColorGetComponents(colorRef);
+    return RGBAMake((int)components[0]*255,(int)components[1]*255,(int)components[2]*255,(int)components[3]*255);
+}
+
+- (UInt32) getColorAtIndex:(NSInteger) index {
+    CGColorRef colorRef = (__bridge CGColorRef)([self.colors objectAtIndex:index]);
+    return [self getRGBFromColor:colorRef];
+}
+
+- (UInt32) gradientColorA:(UInt32) colora B:(UInt32) colorb dis:(CGFloat)dis {
+    if (dis<0) {
+        return colora;
+    }
+    if (dis>1) {
+        return colorb;
+    }
+    UInt8 ar = R(colora),  ag = G(colora), ab = B(colora), aa = A(colora);
+    UInt8 br = R(colorb),  bg = G(colorb), bb = B(colorb), ba = A(colorb);
+    int ldis = 1 - dis, rdis = dis;
+    return RGBAMake(ar * ldis + br * rdis,
+                    ag * ldis + bg * rdis,
+                    ab * ldis + bb * rdis,
+                    aa * ldis + ba * rdis);
+}
+
+- (UInt32) colorAtX:(NSInteger)x y:(NSInteger)y  min:(CGPoint) min max:(CGPoint)max{
+    UInt32 result = 0;
+    if ([self.locations count] == 0) {
+        return [self getColorAtIndex:0];
+    }
+    NSInteger width = (max.x - min.x);
+//    NSInteger hegith = (max.y - min.y);
+//    NSInteger round = MAX(width,hegith);
+    NSUInteger count = [self.locations count];
+    switch (self.gradientType) {
+        case MGradientTypeH: {
+            CGFloat dis = (x - min.x) / width;
+            int index = -1;
+            for (int i = 0; i< count; i++) {
+                if ([self.locations[i] floatValue] > dis) {
+                    index = i;
+                    break;
+                }
+            }
+            if (-1 == index) {
+                return [self getColorAtIndex:0];
+            } else {
+                UInt32 beforeColor = [self getColorAtIndex:index];
+                UInt32 afterColor = [self getColorAtIndex:index +1];
+                float bf = [self.locations[index] floatValue];
+                float af = (index+1 >= [self.locations count]-1)?1.0f:[self.locations[index+1] floatValue];
+                return [self gradientColorA:beforeColor B:afterColor dis:(dis-bf)/(af-bf)];
+            }
+            
+        }
+            break;
+            
+        case MGradientTypeV:
+            
+            break;
+            
+        case MGradientTypeC:
+            
+            break;
+            
+        default:
+            break;
+    }
+    
+    
+    
+    return result;
+}
+
+@end
+
 @interface MImageHandler()
 @property (nonatomic, strong) NSLock *imageLock;
 @property (nonatomic, strong) UIImage *originImage;
@@ -31,6 +110,7 @@
     UInt32 * _pixels;
     UInt32 * _originPixels;
     NSUInteger MINX, MAXX, MINY, MAXY;
+    MColor *_color;
 
 }
 
@@ -40,6 +120,10 @@
     if (self) {
         self.xStack = [NSMutableArray arrayWithCapacity:10];
         self.yStack = [NSMutableArray arrayWithCapacity:10];
+        _color = [[MColor alloc] init];
+        _color.colors = @[(__bridge id)[UIColor redColor].CGColor,
+                          (__bridge id)[UIColor whiteColor].CGColor];
+        _color.locations = @[@(0.25)];
     }
     return self;
 }
@@ -84,28 +168,28 @@
         
         // 2.
         NSUInteger bytesPerPixel = 4;
-        NSUInteger bytesPerRow = bytesPerPixel * _width;
+        NSUInteger bytesPerRow = bytesPerPixel * weakSelf.width;
         NSUInteger bitsPerComponent = 8;
         
-        _pixels = (UInt32 *) calloc(_height * _width, sizeof(UInt32));
+        self->_pixels = (UInt32 *) calloc(weakSelf.height * weakSelf.width, sizeof(UInt32));
         
         // 3.
         CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-        CGContextRef context = CGBitmapContextCreate(_pixels, _width , _height,
+        CGContextRef context = CGBitmapContextCreate(self->_pixels, weakSelf.width , weakSelf.height,
                                                      bitsPerComponent,
                                                      bytesPerRow,
                                                      colorSpace,
                                                      kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
-        CGContextDrawImage(context, CGRectMake(0, 0, _width, _height), inputCGImage);
+        CGContextDrawImage(context, CGRectMake(0, 0, weakSelf.width, weakSelf.height), inputCGImage);
 
-        _originPixels = (UInt32 *) calloc(_height * _width, sizeof(UInt32));
-        CGContextRef originContext = CGBitmapContextCreate(_originPixels, _width , _height,
+        self->_originPixels = (UInt32 *) calloc(weakSelf.height * weakSelf.width, sizeof(UInt32));
+        CGContextRef originContext = CGBitmapContextCreate(self->_originPixels, weakSelf.width , weakSelf.height,
                                                            bitsPerComponent,
                                                            bytesPerRow,
                                                            colorSpace,
                                                            kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
-        CGContextDrawImage(originContext, CGRectMake(0, 0, _width, _height), [_originImage CGImage]);
-        UInt32 *originCurrentPixel = _originPixels + pointx + pointy * _width;
+        CGContextDrawImage(originContext, CGRectMake(0, 0, weakSelf.width, weakSelf.height), [weakSelf.originImage CGImage]);
+        UInt32 *originCurrentPixel = self->_originPixels + pointx + pointy * weakSelf.width;
         CGColorSpaceRelease(colorSpace);
         
         for (int i = 0 ; i < 1; i++) {
@@ -115,7 +199,7 @@
                                                      newColor:RGBAMake(x, 255-x, 255-x, 255)
                                                      oldColor:*originCurrentPixel];
                 
-                CGContextDrawImage(originContext, CGRectMake(0, 0, _width, _height), [_originImage CGImage]);
+                CGContextDrawImage(originContext, CGRectMake(0, 0, weakSelf.width, weakSelf.height), [weakSelf.originImage CGImage]);
                 
                 [self floodFillScanLineWithStack:pointx
                                                y:pointy
@@ -136,8 +220,8 @@
         CGContextRelease(context);
         CGContextRelease(originContext);
         CGImageRelease(processedCGImage);
-        [self freePoint:_pixels];
-        [self freePoint:_originPixels];
+        [self freePoint:self->_pixels];
+        [self freePoint:self->_originPixels];
         dispatch_async(dispatch_get_main_queue(), ^{
             !block?:block(image);
             [weakSelf.imageLock unlock];
@@ -182,7 +266,8 @@
     NSInteger y1;
     BOOL spanLeft, spanRight;
     
-    MINX = _width, MINY = _height;
+    MINX = _width;
+    MINY = _height;
     MAXX = MAXY = 0;
     
     [self.xStack removeAllObjects];
@@ -272,11 +357,15 @@
         while(y1 < _height && [self compare:[self getColorX:x y:y1 pixels:_originPixels] old:roundColor])
         {
             [self setColorX:x y:y1 color:newColor  pixels:_originPixels];
-            if (x < MAXX/2 && y1 < MAXY/2) {
-                [self setColorX:x y:y1 color:RGBAMake(124,255,124,255)  pixels:_pixels];
-            } else {
-                [self setColorX:x y:y1 color:newColor  pixels:_pixels];
-            }
+//            if (x < MAXX/2 && y1 < MAXY/2) {
+//                [self setColorX:x y:y1 color:RGBAMake(124,255,124,255)  pixels:_pixels];
+//            } else {
+//                [self setColorX:x y:y1 color:newColor  pixels:_pixels];
+//            }
+            
+            UInt32 neColor = [_color colorAtX:x y:y1 min:CGPointMake(MINX, MINY) max:CGPointMake(MAXX, MAXY)];
+            [self setColorX:x y:y1 color:neColor  pixels:_pixels];
+            
             if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1 pixels:_originPixels] old:roundColor])// just keep left line once in the stack
             {
                 [self pushX:x-1 y:y1];
