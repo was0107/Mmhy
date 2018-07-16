@@ -202,7 +202,7 @@
     self.locations = locations;
     _color.gradientType = (++igradient)%3;
     UIImage *tmpImage = self.sourceImage;
-    dispatch_async(dispatch_queue_create("my.concurrent.queue", DISPATCH_QUEUE_CONCURRENT), ^{
+    dispatch_async(dispatch_queue_create("micker.concurrent.queue", DISPATCH_QUEUE_CONCURRENT), ^{
         
         [weakSelf.imageLock lock];
         CGImageRef inputCGImage = [tmpImage CGImage];
