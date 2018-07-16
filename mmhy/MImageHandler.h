@@ -21,7 +21,8 @@ typedef NS_ENUM(NSUInteger, MGradientType) {
 @property MGradientType gradientType;
 @property(copy) NSString *name;
 
-- (UInt32) colorAtX:(NSInteger)x y:(NSInteger)y min:(CGPoint) min max:(CGPoint)max;
+- (void) setMin:(CGPoint) min max:(CGPoint)max;
+- (UInt32) colorAtX:(NSInteger)x y:(NSInteger)y;
 @end
 
 

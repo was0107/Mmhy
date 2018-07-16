@@ -16,7 +16,19 @@
 
 #import "MImageHandler.h"
 
-@implementation MColor
+@implementation MColor {
+    NSMutableArray *_array;
+    UInt32 * _newPixels ;//(UInt32 *) calloc(weakSelf.height * weakSelf.width, sizeof(UInt32))
+    CGPoint _min,_max;
+    CGPoint _center;
+}
+
+- (void)dealloc{
+    if (_newPixels != NULL) {
+        free(_newPixels);
+        _newPixels = NULL;
+    }
+}
 
 - (UInt32) getRGBFromColor:(CGColorRef ) colorRef {
     const CGFloat *components = CGColorGetComponents(colorRef);
@@ -37,60 +49,88 @@
     }
     UInt8 ar = R(colora),  ag = G(colora), ab = B(colora), aa = A(colora);
     UInt8 br = R(colorb),  bg = G(colorb), bb = B(colorb), ba = A(colorb);
-    int ldis = 1 - dis, rdis = dis;
-    return RGBAMake(ar * ldis + br * rdis,
-                    ag * ldis + bg * rdis,
-                    ab * ldis + bb * rdis,
-                    aa * ldis + ba * rdis);
+    float ldis = 1 - dis, rdis = dis;
+    return RGBAMake((UInt8)(ar * ldis + br * rdis),
+                    (UInt8)(ag * ldis + bg * rdis),
+                    (UInt8)(ab * ldis + bb * rdis),
+                    (UInt8)(aa * ldis + ba * rdis));
 }
 
-- (UInt32) colorAtX:(NSInteger)x y:(NSInteger)y  min:(CGPoint) min max:(CGPoint)max{
-    UInt32 result = 0;
-    if ([self.locations count] == 0) {
-        return [self getColorAtIndex:0];
+- (void) setMin:(CGPoint) min max:(CGPoint)max {
+    
+    if ([self.locations count] != [self.locations count]) {
+        NSLog(@"Error config");
     }
-    NSInteger width = (max.x - min.x);
-//    NSInteger hegith = (max.y - min.y);
-//    NSInteger round = MAX(width,hegith);
+    _min = min;
+    _max = max;
     NSUInteger count = [self.locations count];
+    if (_newPixels != NULL) {
+        free(_newPixels);
+        _newPixels = NULL;
+    }
+    NSInteger targentLength = 0;
     switch (self.gradientType) {
         case MGradientTypeH: {
-            CGFloat dis = (x - min.x) / width;
-            int index = -1;
-            for (int i = 0; i< count; i++) {
-                if ([self.locations[i] floatValue] > dis) {
-                    index = i;
-                    break;
-                }
-            }
-            if (-1 == index) {
-                return [self getColorAtIndex:0];
-            } else {
-                UInt32 beforeColor = [self getColorAtIndex:index];
-                UInt32 afterColor = [self getColorAtIndex:index +1];
-                float bf = [self.locations[index] floatValue];
-                float af = (index+1 >= [self.locations count]-1)?1.0f:[self.locations[index+1] floatValue];
-                return [self gradientColorA:beforeColor B:afterColor dis:(dis-bf)/(af-bf)];
-            }
-            
+            targentLength = (max.x - min.x);
         }
             break;
             
         case MGradientTypeV:
-            
+            targentLength = (max.y - min.y);
             break;
             
-        case MGradientTypeC:
-            
+        case MGradientTypeC: {
+            int xRound = (max.x - min.x)/2 + 1;
+            int yRound = (max.y - min.y)/2 + 1;
+            targentLength = (int)(sqrt( xRound*xRound + yRound*yRound) + 1);
+            _center = CGPointMake((_max.x - _min.x)/2, (_max.y - _min.y)/2);
+        }
             break;
             
         default:
             break;
     }
     
+    _newPixels = (UInt32 *) calloc(targentLength+1, sizeof(UInt32));
+    for (int i =0 ; i<targentLength; i++) {
+        UInt32 *currentPixel = _newPixels + i;
+        CGFloat dis = 1.0f*i / targentLength;
+        UInt32 color = 0;
+        if (dis <= self.locations[0].floatValue) {
+            color =  [self getColorAtIndex:0];
+            
+        } else if (dis >= self.locations[count-1].floatValue) {
+            color =  [self getColorAtIndex:count-1];
+        } else {
+            int index = 0;
+            for (int j = 0; j< count; j++) {
+                if ([self.locations[j] floatValue] >= dis) {
+                    index = j;
+                    break;
+                }
+            }
+            UInt32 beforeColor = [self getColorAtIndex:index-1];
+            UInt32 afterColor = [self getColorAtIndex:index];
+            float bf = [self.locations[index-1] floatValue];
+            float af = (index >= [self.locations count]-1)?1.0f:[self.locations[index] floatValue];
+            color =  [self gradientColorA:beforeColor B:afterColor dis:(dis-bf)/(af-bf)];
+        }
+        *currentPixel = color;
+    }
+}
+
+- (UInt32) colorAtX:(NSInteger)x y:(NSInteger)y{
     
-    
-    return result;
+    switch (self.gradientType) {
+        case MGradientTypeH:
+            return (UInt32)*(_newPixels + x);
+        case MGradientTypeV:
+            return (UInt32)*(_newPixels + y);
+        default: {
+            return (UInt32)*(_newPixels + (int)(sqrt((x-_center.x)*(x-_center.x) + (y-_center.y)*(y-_center.y))));
+
+        }
+    }
 }
 
 @end
@@ -122,12 +162,13 @@
         self.yStack = [NSMutableArray arrayWithCapacity:10];
         _color = [[MColor alloc] init];
         _color.colors = @[(__bridge id)[UIColor redColor].CGColor,
-                          (__bridge id)[UIColor whiteColor].CGColor];
-        _color.locations = @[@(0.25)];
+                          (__bridge id)[UIColor greenColor].CGColor,
+                          (__bridge id)[UIColor blueColor].CGColor];
+        _color.locations = @[@(0.25),@(0.5),@(1)];//
+        
     }
     return self;
 }
-
 
 - (void) setSourceImage:(UIImage *)sourceImage {
     _sourceImage = sourceImage;
@@ -156,10 +197,10 @@
         NSLog(@"wroing aera!");
         return;
     }
-    
+    static int igradient = 0;
     self.colors = colors;
     self.locations = locations;
-    
+    _color.gradientType = (++igradient)%3;
     UIImage *tmpImage = self.sourceImage;
     dispatch_async(dispatch_queue_create("my.concurrent.queue", DISPATCH_QUEUE_CONCURRENT), ^{
         
@@ -339,6 +380,7 @@
     [self.yStack removeAllObjects];
     [self pushX:originX y:originY];
     
+    [_color setMin:CGPointMake(MINX, MINY) max:CGPointMake(MAXX, MAXY)];
     while(true)
     {
         x = [self popX];
@@ -357,14 +399,7 @@
         while(y1 < _height && [self compare:[self getColorX:x y:y1 pixels:_originPixels] old:roundColor])
         {
             [self setColorX:x y:y1 color:newColor  pixels:_originPixels];
-//            if (x < MAXX/2 && y1 < MAXY/2) {
-//                [self setColorX:x y:y1 color:RGBAMake(124,255,124,255)  pixels:_pixels];
-//            } else {
-//                [self setColorX:x y:y1 color:newColor  pixels:_pixels];
-//            }
-            
-            UInt32 neColor = [_color colorAtX:x y:y1 min:CGPointMake(MINX, MINY) max:CGPointMake(MAXX, MAXY)];
-            [self setColorX:x y:y1 color:neColor  pixels:_pixels];
+            [self setColorX:x y:y1 color:[_color colorAtX:x-MINX y:y1-MINY ]  pixels:_pixels];
             
             if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1 pixels:_originPixels] old:roundColor])// just keep left line once in the stack
             {
