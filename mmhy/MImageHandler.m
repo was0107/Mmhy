@@ -14,17 +14,15 @@
 @property (nonatomic, strong) UIImage *originImage;
 @property (nonatomic, strong) NSMutableArray *xStack;
 @property (nonatomic, strong) NSMutableArray *yStack;
-@property (nonatomic, copy) NSArray *colors;
-@property (nonatomic, copy) NSArray *locations;
 @property (nonatomic, assign) NSInteger width;
 @property (nonatomic, assign) NSInteger height;
+@property (nonatomic, strong) MColor *color;
 @end
 
 @implementation MImageHandler {
     UInt32 * _pixels;
     UInt32 * _originPixels;
     NSUInteger MINX, MAXX, MINY, MAXY;
-    MColor *_color;
 
 }
 
@@ -33,13 +31,7 @@
     self = [super init];
     if (self) {
         self.xStack = [NSMutableArray arrayWithCapacity:10];
-        self.yStack = [NSMutableArray arrayWithCapacity:10];
-        _color = [[MColor alloc] init];
-        _color.colors = @[(__bridge id)[UIColor redColor].CGColor,
-                          (__bridge id)[UIColor greenColor].CGColor,
-                          (__bridge id)[UIColor blueColor].CGColor];
-        _color.locations = @[@(0.15),@(0.85),@(1)];//
-        
+        self.yStack = [NSMutableArray arrayWithCapacity:10];//
     }
     return self;
 }
@@ -61,8 +53,9 @@
     return _imageLock;
 }
 
-
-- (void) drawAtPoint:(CGPoint) point colors:(NSArray *)colors locations:(NSArray *)locations  block:(void(^)(UIImage *image)) block{
+- (void) drawAtPoint:(CGPoint) point
+               color:(MColor *)color
+               block:(void(^)(UIImage *image)) block{
     __weak typeof(self) weakSelf = self;
     static int x = 255;
     NSInteger pointx = point.x/4 * 4;
@@ -71,10 +64,8 @@
         NSLog(@"wroing aera!");
         return;
     }
-    static int igradient = 0;
-    self.colors = colors;
-    self.locations = locations;
-    _color.gradientType = (++igradient)%MGradientTypeCount;
+
+    self.color = color;
     UIImage *tmpImage = self.sourceImage;
     dispatch_async(dispatch_queue_create("micker.concurrent.queue", DISPATCH_QUEUE_CONCURRENT), ^{
         

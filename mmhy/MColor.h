@@ -26,5 +26,7 @@ typedef NS_ENUM(NSUInteger, MGradientType) {
 + (instancetype) newColors:(NSString *) colors locations:(NSString *)locations type:(int)type name:(NSString *)name;
 
 - (void) setMin:(CGPoint) min max:(CGPoint)max;
+
 - (UInt32) colorAtX:(NSInteger)x y:(NSInteger)y;
+
 @end

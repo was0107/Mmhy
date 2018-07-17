@@ -22,6 +22,7 @@
 		62C7587D1D19B08100483D3A /* MainCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 62C7587C1D19B08100483D3A /* MainCollectionViewCell.m */; };
 		62C758801D19B58D00483D3A /* PaintViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 62C7587F1D19B58D00483D3A /* PaintViewController.m */; };
 		62D7419520FDBCC00067EF2D /* MColor.m in Sources */ = {isa = PBXBuildFile; fileRef = 62D7419420FDBCC00067EF2D /* MColor.m */; };
+		62D7419920FDE4820067EF2D /* UIColor+Extend.m in Sources */ = {isa = PBXBuildFile; fileRef = 62D7419720FDE4820067EF2D /* UIColor+Extend.m */; };
 		62F03C7920F75B0C00226072 /* MImageHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = 62F03C7820F75B0C00226072 /* MImageHandler.m */; };
 /* End PBXBuildFile section */
 
@@ -51,6 +52,8 @@
 		62D7419320FDBCC00067EF2D /* MColor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MColor.h; sourceTree = "<group>"; };
 		62D7419420FDBCC00067EF2D /* MColor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MColor.m; sourceTree = "<group>"; };
 		62D7419620FDBD070067EF2D /* MColorDefine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MColorDefine.h; sourceTree = "<group>"; };
+		62D7419720FDE4820067EF2D /* UIColor+Extend.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIColor+Extend.m"; sourceTree = "<group>"; };
+		62D7419820FDE4820067EF2D /* UIColor+Extend.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIColor+Extend.h"; sourceTree = "<group>"; };
 		62F03C7720F75B0C00226072 /* MImageHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MImageHandler.h; sourceTree = "<group>"; };
 		62F03C7820F75B0C00226072 /* MImageHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MImageHandler.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -85,6 +88,8 @@
 		627604B21CCBC13900D741AE /* mmhy */ = {
 			isa = PBXGroup;
 			children = (
+				62D7419820FDE4820067EF2D /* UIColor+Extend.h */,
+				62D7419720FDE4820067EF2D /* UIColor+Extend.m */,
 				627604CA1CCBC14F00D741AE /* HYView.h */,
 				627604CB1CCBC14F00D741AE /* HYView.m */,
 				62D7419620FDBD070067EF2D /* MColorDefine.h */,
@@ -204,6 +209,7 @@
 				62D7419520FDBCC00067EF2D /* MColor.m in Sources */,
 				62C758801D19B58D00483D3A /* PaintViewController.m in Sources */,
 				62A277612080AA5D00196C1A /* MTLView.m in Sources */,
+				62D7419920FDE4820067EF2D /* UIColor+Extend.m in Sources */,
 				627604B51CCBC13900D741AE /* main.m in Sources */,
 				62C7587D1D19B08100483D3A /* MainCollectionViewCell.m in Sources */,
 				627604CC1CCBC14F00D741AE /* HYView.m in Sources */,

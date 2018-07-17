@@ -8,6 +8,7 @@
 
 #import "MColor.h"
 #import "MColorDefine.h"
+#import "UIColor+Extend.h"
 
 @implementation MColor {
     UInt32 * _newPixels;
@@ -18,10 +19,23 @@
 
 + (instancetype) newColors:(NSString *) colors locations:(NSString *)locations type:(int)type name:(NSString *)name {
     MColor *color = [[MColor alloc] init];
-    
-    
     color.gradientType = type;
     color.name = name;
+    
+    NSArray *temp = [colors componentsSeparatedByString:@","];
+    NSMutableArray *result = [NSMutableArray arrayWithCapacity:[temp count]];
+    [temp enumerateObjectsUsingBlock:^(NSString * obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        [result addObject: (__bridge id)[UIColor getColor:obj].CGColor];
+    }];
+    color.colors = [result copy];
+    
+    temp = [locations componentsSeparatedByString:@","];
+    result = [NSMutableArray arrayWithCapacity:[temp count]];
+    [temp enumerateObjectsUsingBlock:^(NSString * obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        [result addObject:@([obj floatValue])];
+    }];
+    color.locations = result;
+    
     return color;
 }
 

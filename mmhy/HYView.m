@@ -9,7 +9,6 @@
 #import "HYView.h"
 #import "MImageHandler.h"
 
-
 @interface HYView()
 @property (nonatomic, strong) NSMutableArray *xStack;
 @property (nonatomic, strong) NSMutableArray *yStack;
@@ -17,7 +16,9 @@
 
 @end
 
-@implementation HYView
+@implementation HYView {
+    MColor *_color;
+}
 - (id) initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     self.imageHandler = [[MImageHandler alloc] init];
@@ -31,10 +32,14 @@
 }
 
 - (void) drawAtPoint:(CGPoint) point {
-    UIColor *color = nil;
-    CGColorRef colorRef = [UIColor redColor].CGColor;
-    CAGradientLayer *layer = nil;
-    [self.imageHandler drawAtPoint:point colors:nil locations:nil block:^(UIImage *image) {
+    
+    if(!_color) {
+        _color = [MColor newColors:@"FF0000,00FF00,0000FF" locations:@"0.15,0.85,1" type:0 name:@"1"];
+    }
+    
+    [self.imageHandler drawAtPoint:point
+                             color:_color
+                             block:^(UIImage *image) {
         self.image = image;
     }];
 }

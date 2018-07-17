@@ -17,8 +17,7 @@
 @property (nonatomic, assign, readonly) NSInteger height;
 
 - (void) drawAtPoint:(CGPoint) point
-              colors:(NSArray *)colors
-           locations:(NSArray *)locations
+               color:(MColor *)color
                block:(void(^)(UIImage *image)) block;
 
 @end
