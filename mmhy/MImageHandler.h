@@ -8,23 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-
-typedef NS_ENUM(NSUInteger, MGradientType) {
-    MGradientTypeH,
-    MGradientTypeV,
-    MGradientTypeC,
-};
-
-@interface MColor : NSObject
-@property(nullable, copy) NSArray *colors;
-@property(nullable, copy) NSArray<NSNumber *> *locations;
-@property MGradientType gradientType;
-@property(copy) NSString *name;
-
-- (void) setMin:(CGPoint) min max:(CGPoint)max;
-- (UInt32) colorAtX:(NSInteger)x y:(NSInteger)y;
-@end
-
+#import "MColor.h"
 
 @interface MImageHandler : NSObject
 
