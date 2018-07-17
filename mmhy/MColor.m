@@ -21,22 +21,29 @@
     MColor *color = [[MColor alloc] init];
     color.gradientType = type;
     color.name = name;
-    
-    NSArray *temp = [colors componentsSeparatedByString:@","];
+    [color setColorString:colors];
+    [color setLocationString:locations];
+    return color;
+}
+
+- (id) setColorString:(NSString *)stringColor {
+    NSArray *temp = [stringColor componentsSeparatedByString:@","];
     NSMutableArray *result = [NSMutableArray arrayWithCapacity:[temp count]];
     [temp enumerateObjectsUsingBlock:^(NSString * obj, NSUInteger idx, BOOL * _Nonnull stop) {
         [result addObject: (__bridge id)[UIColor getColor:obj].CGColor];
     }];
-    color.colors = [result copy];
-    
-    temp = [locations componentsSeparatedByString:@","];
-    result = [NSMutableArray arrayWithCapacity:[temp count]];
+    self.colors = [result copy];
+    return self;
+}
+
+- (id) setLocationString:(NSString *)stringLocation {
+    NSArray *temp = [stringLocation componentsSeparatedByString:@","];
+    NSMutableArray *result = [NSMutableArray arrayWithCapacity:[temp count]];
     [temp enumerateObjectsUsingBlock:^(NSString * obj, NSUInteger idx, BOOL * _Nonnull stop) {
         [result addObject:@([obj floatValue])];
     }];
-    color.locations = result;
-    
-    return color;
+    self.locations = result;
+    return self;
 }
 
 - (void)dealloc{

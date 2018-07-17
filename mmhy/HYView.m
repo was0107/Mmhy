@@ -10,10 +10,7 @@
 #import "MImageHandler.h"
 
 @interface HYView()
-@property (nonatomic, strong) NSMutableArray *xStack;
-@property (nonatomic, strong) NSMutableArray *yStack;
 @property (nonatomic, strong) MImageHandler *imageHandler;
-
 @end
 
 @implementation HYView {
@@ -36,6 +33,8 @@
     if(!_color) {
         _color = [MColor newColors:@"FF0000,00FF00,0000FF" locations:@"0.15,0.85,1" type:0 name:@"1"];
     }
+    
+    _color.gradientType = (_color.gradientType + 1) % MGradientTypeCount;
     
     [self.imageHandler drawAtPoint:point
                              color:_color
