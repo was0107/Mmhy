@@ -32,10 +32,12 @@
     
     if(!_color) {
         _color = [MColor newColors:@"FF0000,00FF00,0000FF" locations:@"0.15,0.85,1" type:0 name:@"1"];
+//        _color = [MColor newColors:@"ED9CAB,D1E9A2,ADA3CC" locations:@"0.15,0.85,1" type:0 name:@"1"];
     }
     
-    _color.gradientType = (_color.gradientType + 1) % MGradientTypeCount;
-    
+//    _color.gradientType = (_color.gradientType + 1) % MGradientTypeCount;
+    _color.gradientType = MGradientTypeC;
+
     [self.imageHandler drawAtPoint:point
                              color:_color
                              block:^(UIImage *image) {

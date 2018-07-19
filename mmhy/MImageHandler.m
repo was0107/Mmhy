@@ -17,6 +17,7 @@
 @property (nonatomic, assign) NSInteger width;
 @property (nonatomic, assign) NSInteger height;
 @property (nonatomic, strong) MColor *color;
+@property (nonatomic, copy) ImageBlock block;
 @end
 
 @implementation MImageHandler {
@@ -55,7 +56,7 @@
 
 - (void) drawAtPoint:(CGPoint) point
                color:(MColor *)color
-               block:(void(^)(UIImage *image)) block{
+               block:(ImageBlock) block{
     __weak typeof(self) weakSelf = self;
     static int x = 255;
     NSInteger pointx = point.x/4 * 4;
@@ -67,6 +68,7 @@
 
     self.color = color;
     UIImage *tmpImage = self.sourceImage;
+    self.block = block;
     dispatch_async(dispatch_queue_create("micker.concurrent.queue", DISPATCH_QUEUE_CONCURRENT), ^{
         
         [weakSelf.imageLock lock];
@@ -110,7 +112,8 @@
                 [self floodFillScanLineWithStack:pointx
                                                y:pointy
                                         newColor:RGBAMake(x, 255-x, 255-x, 255)
-                                        oldColor:*originCurrentPixel];
+                                        oldColor:*originCurrentPixel
+                                         context:context];
                 
                 x-= 40;
                 if (x<0) {
@@ -121,18 +124,30 @@
             }
         }
         
-        CGImageRef processedCGImage = CGBitmapContextCreateImage(context);
-        UIImage *image = [UIImage imageWithCGImage:processedCGImage];
-        CGContextRelease(context);
-        CGContextRelease(originContext);
-        CGImageRelease(processedCGImage);
-        [self freePoint:self->_pixels];
-        [self freePoint:self->_originPixels];
+        UIImage *image = [self currentImageInContext:context];
         dispatch_async(dispatch_get_main_queue(), ^{
             !block?:block(image);
             [weakSelf.imageLock unlock];
         });
+        CGContextRelease(context);
+        CGContextRelease(originContext);
+        [self freePoint:self->_pixels];
+        [self freePoint:self->_originPixels];
     });
+}
+
+- (void) printCurrentImage:(CGContextRef) context {
+    UIImage *image = [self currentImageInContext:context];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        !self.block?:self.block(image);
+    });
+}
+
+- (UIImage *) currentImageInContext:(CGContextRef) context {
+    CGImageRef processedCGImage = CGBitmapContextCreateImage(context);
+    UIImage *image = [UIImage imageWithCGImage:processedCGImage];
+    CGImageRelease(processedCGImage);
+    return image;
 }
 
 - (void) freePoint:(UInt32*) point {
@@ -229,7 +244,7 @@
 //    NSLog(@"MINX, MAXX, MINY,MAXY= %ld, %ld,%ld, %ld",MINX, MAXX, MINY,MAXY);
 }
 
-- (void) floodFillScanLineWithStack:(NSInteger) x y:(NSInteger)y newColor:(UInt32) newColor oldColor:(UInt32) oldColor
+- (void) floodFillScanLineWithStack:(NSInteger) x y:(NSInteger)y newColor:(UInt32) newColor oldColor:(UInt32) oldColor context:(CGContextRef) context
 {
     if(newColor == oldColor) {
         printf("do nothing !!!, filled area!!");
@@ -245,7 +260,10 @@
     [self.yStack removeAllObjects];
     [self pushX:originX y:originY];
     
-    [_color setMin:CGPointMake(MINX, MINY) max:CGPointMake(MAXX, MAXY)];
+    [_color setMin:CGPointMake(MINX, MINY) max:CGPointMake(MAXX, MAXY) center:CGPointMake(x, y)];
+    
+    int lines = 0;
+
     while(true)
     {
         x = [self popX];
@@ -286,7 +304,9 @@
                 spanRight = false;
             }
             y1++;
-            
+        }
+        if (++lines %50 == 0) {
+            [self printCurrentImage:context];
         }
     }
 }

@@ -10,6 +10,9 @@
 #import <UIKit/UIKit.h>
 #import "MColor.h"
 
+typedef void (^ImageBlock)(UIImage *image);
+
+
 @interface MImageHandler : NSObject
 
 @property (nonatomic, strong) UIImage *sourceImage;
@@ -18,6 +21,6 @@
 
 - (void) drawAtPoint:(CGPoint) point
                color:(MColor *)color
-               block:(void(^)(UIImage *image)) block;
+               block:(ImageBlock) block;
 
 @end

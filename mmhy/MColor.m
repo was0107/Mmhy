@@ -13,7 +13,7 @@
 @implementation MColor {
     UInt32 * _newPixels;
     CGPoint _min,_max;
-    CGPoint _center;
+    CGPoint _originCenter;
 }
 
 
@@ -79,7 +79,7 @@
                     (UInt8)(aa * ldis + ba * rdis));
 }
 
-- (void) setMin:(CGPoint) min max:(CGPoint)max {
+- (void) setMin:(CGPoint) min max:(CGPoint)max  center:(CGPoint)center{
     
     if ([self.locations count] != [self.locations count]) {
         NSLog(@"Error config");
@@ -104,9 +104,14 @@
             
         case MGradientTypeC: {
             int xRound = (max.x - min.x)/2 + 1;
-            int yRound = (max.y - min.y)/2 + 1;
+            int yRound = ((max.y - min.y)/2) + 1;
             targentLength = (int)(sqrt( xRound*xRound + yRound*yRound) + 1);
-            _center = CGPointMake((_max.x - _min.x)/2, (_max.y - _min.y)/2);
+            _originCenter = CGPointMake((_max.x - _min.x)/2, (_max.y - _min.y)/2);
+            
+//            int xRound = MAX(fabs(center.x-min.x), fabs(center.x-max.x)) + 1;
+//            int yRound = (MAX(fabs(center.y-min.y), fabs(center.y-max.y))) + 1;
+//            targentLength = (int)(sqrt( xRound*xRound + yRound*yRound) + 1);
+//            _originCenter = center;
         }
             break;
             
@@ -150,7 +155,7 @@
         case MGradientTypeV:
             return (UInt32)*(_newPixels + y);
         case MGradientTypeC: {
-            return (UInt32)*(_newPixels + (int)(sqrt((x-_center.x)*(x-_center.x) + (y-_center.y)*(y-_center.y))));
+            return (UInt32)*(_newPixels + (int)(sqrt((x-_originCenter.x)*(x-_originCenter.x) + (y-_originCenter.y)*(y-_originCenter.y))));
         }default: {
             return 0;
         }
