@@ -24,6 +24,7 @@
     UInt32 * _pixels;
     UInt32 * _originPixels;
     NSUInteger MINX, MAXX, MINY, MAXY;
+    NSUInteger _lineCount ;
 
 }
 
@@ -90,37 +91,55 @@
                                                      kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
         CGContextDrawImage(context, CGRectMake(0, 0, weakSelf.width, weakSelf.height), inputCGImage);
 
-        self->_originPixels = (UInt32 *) calloc(weakSelf.height * weakSelf.width, sizeof(UInt32));
-        CGContextRef originContext = CGBitmapContextCreate(self->_originPixels, weakSelf.width , weakSelf.height,
-                                                           bitsPerComponent,
-                                                           bytesPerRow,
-                                                           colorSpace,
-                                                           kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
-        CGContextDrawImage(originContext, CGRectMake(0, 0, weakSelf.width, weakSelf.height), [weakSelf.originImage CGImage]);
-        UInt32 *originCurrentPixel = self->_originPixels + pointx + pointy * weakSelf.width;
-        CGColorSpaceRelease(colorSpace);
+        CGContextRef originContext = NULL;
+        if (self->_color.isGradientColor) {
+            
+            self->_originPixels = (UInt32 *) calloc(weakSelf.height * weakSelf.width, sizeof(UInt32));
+            originContext = CGBitmapContextCreate(self->_originPixels, weakSelf.width , weakSelf.height,
+                                               bitsPerComponent,
+                                               bytesPerRow,
+                                               colorSpace,
+                                               kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+            CGContextDrawImage(originContext, CGRectMake(0, 0, weakSelf.width, weakSelf.height), [weakSelf.originImage CGImage]);
+            CGColorSpaceRelease(colorSpace);
+            
+        } else {
+            self->_originPixels = self->_pixels;
+        }
         
+        UInt32 *originCurrentPixel = self->_originPixels + pointx + pointy * weakSelf.width;
+
         for (int i = 0 ; i < 1; i++) {
             @autoreleasepool{
-                [self doGetRectWithFloodFillScanLineWithStack:pointx
-                                                            y:pointy
-                                                     newColor:RGBAMake(x, 255-x, 255-x, 255)
-                                                     oldColor:*originCurrentPixel];
-                
-                CGContextDrawImage(originContext, CGRectMake(0, 0, weakSelf.width, weakSelf.height), [weakSelf.originImage CGImage]);
+                self->_lineCount = 0;
+                UInt32 newColor = RGBAMake(x, 255-x, 255-x, 255);
+                if (self->_color.isGradientColor) {
+                    [self doGetRectWithFloodFillScanLineWithStack:pointx
+                                                                y:pointy
+                                                         newColor:newColor
+                                                         oldColor:*originCurrentPixel];
+                    
+                    CGContextDrawImage(originContext, CGRectMake(0, 0, weakSelf.width, weakSelf.height), [weakSelf.originImage CGImage]);
+                    
+                    [weakSelf.color setMin:CGPointMake(self->MINX, self->MINY)
+                                       max:CGPointMake(self->MAXX, self->MAXY)
+                                    center:CGPointMake(pointx, pointy)];
+                }
+                else {
+                    newColor = [self->_color getColorAtIndex:0];
+                }
                 
                 [self floodFillScanLineWithStack:pointx
                                                y:pointy
-                                        newColor:RGBAMake(x, 255-x, 255-x, 255)
+                                        newColor:newColor
                                         oldColor:*originCurrentPixel
                                          context:context];
                 
+//                [self floodFill4:pointx y:pointy newColor:RGBAMake(x, 255-x, 255-x, 255) oldColor:*originCurrentPixel context:context];
+//                [self floodFill8:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(255, 0, 0, 255) oldColor:*originCurrentPixel];
+                
                 x-= 40;
-                if (x<0) {
-                    x = 255;
-                }
-                //    [self floodFill4:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(255, 0, 0, 255) oldColor:*currentPixel];
-                //    [self floodFill8:(int)(point.x) y:(int)(point.y) newColor:RGBAMake(255, 0, 0, 255) oldColor:*currentPixel];
+                if (x<0) {x = 255;}
             }
         }
         
@@ -132,7 +151,7 @@
         CGContextRelease(context);
         CGContextRelease(originContext);
         [self freePoint:self->_pixels];
-        [self freePoint:self->_originPixels];
+        !self.color.isGradientColor?:[self freePoint:self->_originPixels];
     });
 }
 
@@ -260,10 +279,6 @@
     [self.yStack removeAllObjects];
     [self pushX:originX y:originY];
     
-    [_color setMin:CGPointMake(MINX, MINY) max:CGPointMake(MAXX, MAXY) center:CGPointMake(x, y)];
-    
-    int lines = 0;
-
     while(true)
     {
         x = [self popX];
@@ -282,7 +297,7 @@
         while(y1 < _height && [self compare:[self getColorX:x y:y1 pixels:_originPixels] old:roundColor])
         {
             [self setColorX:x y:y1 color:newColor  pixels:_originPixels];
-            [self setColorX:x y:y1 color:[_color colorAtX:x-MINX y:y1-MINY ]  pixels:_pixels];
+            !self.color.isGradientColor?:[self setColorX:x y:y1 color:[_color colorAtX:x y:y1 ]  pixels:_pixels];
             
             if(!spanLeft && x > 0 && [self compare:[self getColorX:x-1 y:y1 pixels:_originPixels] old:roundColor])// just keep left line once in the stack
             {
@@ -305,13 +320,16 @@
             }
             y1++;
         }
-        if (++lines %50 == 0) {
+        
+        /**** Animate image
+        if (self.animated && ++_lineCount %50 == 0) {
             [self printCurrentImage:context];
         }
+        *****/
     }
 }
 
-- (void) floodFill4:(NSInteger) x y:(NSInteger)y newColor:(UInt32) newColor oldColor:(UInt32) oldColor {
+- (void) floodFill4:(NSInteger) x y:(NSInteger)y newColor:(UInt32) newColor oldColor:(UInt32) oldColor context:(CGContextRef) context{
     if(oldColor == newColor) {
         printf("do nothing !!!, filled area!!");
         return;
@@ -319,14 +337,20 @@
     
     if(x >= 0 && x < _width &&
        y >= 0 && y < _height &&
-       [self compare:[self getColorX:x y:y] old:oldColor])
+       [self compare:[self getColorX:x y:y pixels:_originPixels] old:oldColor])
     {
-        [self setColorX:x y:y color:newColor];
+        [self setColorX:x y:y color:newColor pixels:_originPixels];
+        [self setColorX:x y:y color:[_color colorAtX:x y:y ] pixels:_pixels];
         
-        [self floodFill4:x+1 y:y newColor:newColor oldColor:oldColor];
-        [self floodFill4:x-1 y:y newColor:newColor oldColor:oldColor];
-        [self floodFill4:x y:y+1 newColor:newColor oldColor:oldColor];
-        [self floodFill4:x y:y-1 newColor:newColor oldColor:oldColor];
+        /**** Animate image
+         if (self.animated && ++_lineCount %50 == 0) {
+         [self printCurrentImage:context];
+         }
+         *****/
+        [self floodFill4:x+1 y:y newColor:newColor oldColor:oldColor context:context];
+        [self floodFill4:x-1 y:y newColor:newColor oldColor:oldColor context:context];
+        [self floodFill4:x y:y+1 newColor:newColor oldColor:oldColor context:context];
+        [self floodFill4:x y:y-1 newColor:newColor oldColor:oldColor context:context];
     }
 }
 

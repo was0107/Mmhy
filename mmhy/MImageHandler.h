@@ -18,6 +18,7 @@ typedef void (^ImageBlock)(UIImage *image);
 @property (nonatomic, strong) UIImage *sourceImage;
 @property (nonatomic, assign, readonly) NSInteger width;
 @property (nonatomic, assign, readonly) NSInteger height;
+@property (nonatomic, assign) BOOL animated;
 
 - (void) drawAtPoint:(CGPoint) point
                color:(MColor *)color

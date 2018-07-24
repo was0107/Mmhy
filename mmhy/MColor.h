@@ -21,6 +21,7 @@ typedef NS_ENUM(NSUInteger, MGradientType) {
 @property(nullable, copy) NSArray *colors;
 @property(nullable, copy) NSArray<NSNumber *> *locations;
 @property MGradientType gradientType;
+@property BOOL isGradientColor;
 @property(copy) NSString *name;
 
 + (instancetype) newColors:(NSString *) colors locations:(NSString *)locations type:(int)type name:(NSString *)name;
@@ -33,4 +34,5 @@ typedef NS_ENUM(NSUInteger, MGradientType) {
 
 - (UInt32) colorAtX:(NSInteger)x y:(NSInteger)y;
 
+- (UInt32) getColorAtIndex:(NSInteger) index;
 @end

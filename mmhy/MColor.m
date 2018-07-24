@@ -33,6 +33,7 @@
         [result addObject: (__bridge id)[UIColor getColor:obj].CGColor];
     }];
     self.colors = [result copy];
+    self.isGradientColor = [self.colors count] > 1;
     return self;
 }
 
@@ -55,7 +56,7 @@
 
 - (UInt32) getRGBFromColor:(CGColorRef ) colorRef {
     const CGFloat *components = CGColorGetComponents(colorRef);
-    return RGBAMake((int)components[0]*255,(int)components[1]*255,(int)components[2]*255,(int)components[3]*255);
+    return RGBAMake((UInt8)(components[0]*255),(UInt8)(components[1]*255),(UInt8)(components[2]*255),(UInt8)(components[3]*255));
 }
 
 - (UInt32) getColorAtIndex:(NSInteger) index {
@@ -70,13 +71,14 @@
     if (dis>1) {
         return colorb;
     }
-    UInt8 ar = R(colora),  ag = G(colora), ab = B(colora), aa = A(colora);
-    UInt8 br = R(colorb),  bg = G(colorb), bb = B(colorb), ba = A(colorb);
-    float ldis = 1 - dis, rdis = dis;
+    UInt8 ar = R(colora),  ag = G(colora), ab = B(colora);//, aa = A(colora);
+    UInt8 br = R(colorb),  bg = G(colorb), bb = B(colorb);//, ba = A(colorb);
+    float ldis = 1.0 - dis, rdis = dis;
     return RGBAMake((UInt8)(ar * ldis + br * rdis),
                     (UInt8)(ag * ldis + bg * rdis),
                     (UInt8)(ab * ldis + bb * rdis),
-                    (UInt8)(aa * ldis + ba * rdis));
+                    255);
+//    (UInt8)(aa * ldis + ba * rdis));
 }
 
 - (void) setMin:(CGPoint) min max:(CGPoint)max  center:(CGPoint)center{
@@ -86,32 +88,30 @@
     }
     _min = min;
     _max = max;
+    _originCenter = center;
+
     NSUInteger count = [self.locations count];
     if (_newPixels != NULL) {
         free(_newPixels);
         _newPixels = NULL;
     }
+    NSArray *tmpLocations = self.locations;
     NSInteger targentLength = 0;
     switch (self.gradientType) {
         case MGradientTypeH: {
-            targentLength = (max.x - min.x);
+            targentLength = MAX(fabs(center.x-min.x), fabs(center.x-max.x)) + 1;
         }
             break;
             
-        case MGradientTypeV:
-            targentLength = (max.y - min.y);
+        case MGradientTypeV: {
+            targentLength = (MAX(fabs(center.y-min.y), fabs(center.y-max.y))) + 1;
+        }
             break;
             
         case MGradientTypeC: {
-            int xRound = (max.x - min.x)/2 + 1;
-            int yRound = ((max.y - min.y)/2) + 1;
+            int xRound = MAX(fabs(center.x-min.x), fabs(center.x-max.x)) + 1;
+            int yRound = (MAX(fabs(center.y-min.y), fabs(center.y-max.y))) + 1;
             targentLength = (int)(sqrt( xRound*xRound + yRound*yRound) + 1);
-            _originCenter = CGPointMake((_max.x - _min.x)/2, (_max.y - _min.y)/2);
-            
-//            int xRound = MAX(fabs(center.x-min.x), fabs(center.x-max.x)) + 1;
-//            int yRound = (MAX(fabs(center.y-min.y), fabs(center.y-max.y))) + 1;
-//            targentLength = (int)(sqrt( xRound*xRound + yRound*yRound) + 1);
-//            _originCenter = center;
         }
             break;
             
@@ -124,23 +124,23 @@
         UInt32 *currentPixel = _newPixels + i;
         CGFloat dis = 1.0f*i / targentLength;
         UInt32 color = 0;
-        if (dis <= self.locations[0].floatValue) {
+        if (dis <= [tmpLocations[0] floatValue]) {
             color =  [self getColorAtIndex:0];
             
-        } else if (dis >= self.locations[count-1].floatValue) {
+        } else if (dis >= [tmpLocations[count-1] floatValue]) {
             color =  [self getColorAtIndex:count-1];
         } else {
             int index = 0;
             for (int j = 0; j< count; j++) {
-                if ([self.locations[j] floatValue] >= dis) {
+                if ([tmpLocations[j] floatValue] >= dis) {
                     index = j;
                     break;
                 }
             }
             UInt32 beforeColor = [self getColorAtIndex:index-1];
             UInt32 afterColor = [self getColorAtIndex:index];
-            float bf = [self.locations[index-1] floatValue];
-            float af = (index >= [self.locations count]-1)?1.0f:[self.locations[index] floatValue];
+            float bf = [tmpLocations[index-1] floatValue];
+            float af = (index >= count-1)?1.0f:[tmpLocations[index] floatValue];
             color =  [self gradientColorA:beforeColor B:afterColor dis:(dis-bf)/(af-bf)];
         }
         *currentPixel = color;
@@ -151,15 +151,16 @@
     
     switch (self.gradientType) {
         case MGradientTypeH:
-            return (UInt32)*(_newPixels + x);
+            return (UInt32)*(_newPixels + (int)(fabs(x-_originCenter.x)));
         case MGradientTypeV:
-            return (UInt32)*(_newPixels + y);
+            return (UInt32)*(_newPixels + (int)(fabs(y-_originCenter.y)));
         case MGradientTypeC: {
-            return (UInt32)*(_newPixels + (int)(sqrt((x-_originCenter.x)*(x-_originCenter.x) + (y-_originCenter.y)*(y-_originCenter.y))));
+            int xRound = (x-_originCenter.x);
+            int yRound = (y-_originCenter.y);
+            return (UInt32)*(_newPixels + (int)(sqrt(xRound*xRound + yRound*yRound)));
         }default: {
             return 0;
         }
     }
 }
-
 @end
