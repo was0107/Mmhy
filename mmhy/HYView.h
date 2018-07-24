@@ -10,6 +10,8 @@
 
 @interface HYView : UIImageView
 
+@property int type;
+
 - (void) drawAtPoint:(CGPoint) point;
 
 @end

@@ -38,7 +38,7 @@
         _color = [MColor newColors:@"ED9CAB,D1E9A2,ADA3CC" locations:@"0.0,0.5,1" type:0 name:@"1"];
     }
     
-    _color.gradientType = (_color.gradientType + 1) % MGradientTypeCount;
+    _color.gradientType = self.type;//(_color.gradientType + 1) % MGradientTypeCount;
 //    _color.gradientType = MGradientTypeH;
 
     [self.imageHandler drawAtPoint:point

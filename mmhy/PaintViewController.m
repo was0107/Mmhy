@@ -8,6 +8,8 @@
 
 #import "PaintViewController.h"
 #import "HYView.h"
+#import "MColor.h"
+
 
 @interface PaintViewController ()<UIScrollViewDelegate>
 @property (nonatomic, strong) HYView *hyView;
@@ -19,9 +21,13 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"详情";
+    static int type = 0;
+    
+    
     self.view.backgroundColor = [UIColor whiteColor];
     self.hyView = [[HYView alloc] initWithFrame:CGRectMake(0, 0, 300, 400)];
     self.hyView.image = [UIImage imageNamed:self.imageName];
+    self.hyView.type = (++type)%MGradientTypeCount;
     CGImageRef inputCGImage = [self.hyView.image CGImage];
     NSUInteger width  = CGImageGetWidth(inputCGImage);
     NSUInteger height = CGImageGetHeight(inputCGImage);
