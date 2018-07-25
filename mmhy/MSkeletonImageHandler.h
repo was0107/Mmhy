@@ -1,8 +1,8 @@
 //
-//  MImageHandler.h
+//  MSkeletonImageHandler.h
 //  mmhy
 //
-//  Created by Micker on 2018/7/12.
+//  Created by Micker on 2018/7/25.
 //  Copyright © 2018年 micker. All rights reserved.
 //
 
@@ -11,17 +11,13 @@
 #import "MColor.h"
 #import "MColorDefine.h"
 
-
-
-@interface MImageHandler : NSObject
+@interface MSkeletonImageHandler : NSObject
 
 @property (nonatomic, strong) UIImage *sourceImage;
 @property (nonatomic, assign, readonly) NSInteger width;
 @property (nonatomic, assign, readonly) NSInteger height;
-@property (nonatomic, assign) BOOL animated;
 
-- (void) drawAtPoint:(CGPoint) point
-               color:(MColor *)color
-               block:(ImageBlock) block;
 
+- (void) doSetSourceImage:(UIImage *) source
+                    block:(ImageBlock) block;
 @end

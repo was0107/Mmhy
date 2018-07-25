@@ -9,6 +9,7 @@
 #import "MainViewController.h"
 #import "MainCollectionViewCell.h"
 #import "PaintViewController.h"
+#import "CreateViewController.h"
 
 @interface MainViewController ()<UICollectionViewDelegate, UICollectionViewDataSource>
 @property (nonatomic, strong) UICollectionView *collectionView;
@@ -30,6 +31,9 @@
     [self.view addSubview:self.collectionView];
     self.view.backgroundColor = [UIColor blackColor];
     [self.collectionView reloadData];
+    
+    UIBarButtonItem *barItem = [[UIBarButtonItem alloc] initWithTitle:@"C" style:UIBarButtonItemStylePlain target:self action:@selector(doShowCreate:)];
+    [self.navigationItem setRightBarButtonItem:barItem];
     // Do any additional setup after loading the view.
 }
 
@@ -92,6 +96,13 @@
     [self.navigationController pushViewController:controller animated:YES];
 }
 
+
+#pragma mark --
+- (IBAction)doShowCreate:(id)sender {
+    CreateViewController *controller = [[CreateViewController alloc] init];
+    controller.title = @"Skeleton";
+    [self.navigationController pushViewController:controller animated:YES];
+}
 
 
 @end

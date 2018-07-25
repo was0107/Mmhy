@@ -16,5 +16,6 @@
 #define A(x) ( Mask8(x >> 24) ) // L'élément A est ajouté aux paramètres RGBA, avec un masquage des 24 premiers bits (pour obtenir au total 32 bits)
 #define RGBAMake(r, g, b, a) ( Mask8(r) | Mask8(g) << 8 | Mask8(b) << 16 | Mask8(a) << 24 )
 
+typedef void (^ImageBlock)(UIImage *image);
 
 #endif /* MColorDefine_h */
