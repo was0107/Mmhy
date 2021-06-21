@@ -8,9 +8,16 @@
 
 #import <UIKit/UIKit.h>
 
-@interface HYView : UIImageView
+typedef NS_ENUM(NSUInteger, MDrawableType) {
+    MDrawableTypeColor,
+    MDrawableTypeWenli,
+    MDrawableTypeShadow,
+    MDrawableTypeCount,
+};
 
+@interface HYView : UIImageView
 @property int type;
+@property MDrawableType drawableType;
 
 - (void) drawAtPoint:(CGPoint) point;
 

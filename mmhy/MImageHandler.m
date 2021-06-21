@@ -8,6 +8,7 @@
 
 #import "MImageHandler.h"
 #import "MColorDefine.h"
+#import "UIImage+Extend.h"
 
 @interface MImageHandler()
 @property (nonatomic, strong) NSLock *imageLock;
@@ -47,6 +48,14 @@
         self.height = CGImageGetHeight(inputCGImage) ;
     }
 }
+
+- (void) setWenliImage:(UIImage *)wenliImage {
+    if (!self.sourceImage) {
+        return;
+    }
+    _wenliImage = [wenliImage imageByScalingProportionallyToSize:CGSizeMake(self.width, self.height)];
+}
+
 
 - (NSLock *) imageLock {
     if (!_imageLock) {

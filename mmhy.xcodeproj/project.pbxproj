@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		625A69262109A82600234CF0 /* wenli.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 625A69252109A82600234CF0 /* wenli.jpg */; };
+		625A69292109AB4500234CF0 /* UIImage+Extend.m in Sources */ = {isa = PBXBuildFile; fileRef = 625A69282109AB4500234CF0 /* UIImage+Extend.m */; };
 		627604B51CCBC13900D741AE /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 627604B41CCBC13900D741AE /* main.m */; };
 		627604B81CCBC13900D741AE /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 627604B71CCBC13900D741AE /* AppDelegate.m */; };
 		627604BE1CCBC13900D741AE /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 627604BC1CCBC13900D741AE /* Main.storyboard */; };
@@ -30,6 +32,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		625A69252109A82600234CF0 /* wenli.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = wenli.jpg; sourceTree = "<group>"; };
+		625A69272109AB4500234CF0 /* UIImage+Extend.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+Extend.h"; sourceTree = "<group>"; };
+		625A69282109AB4500234CF0 /* UIImage+Extend.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIImage+Extend.m"; sourceTree = "<group>"; };
 		627604B01CCBC13900D741AE /* mmhy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mmhy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		627604B41CCBC13900D741AE /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		627604B61CCBC13900D741AE /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -98,6 +103,8 @@
 			children = (
 				62D7419820FDE4820067EF2D /* UIColor+Extend.h */,
 				62D7419720FDE4820067EF2D /* UIColor+Extend.m */,
+				625A69272109AB4500234CF0 /* UIImage+Extend.h */,
+				625A69282109AB4500234CF0 /* UIImage+Extend.m */,
 				627604CA1CCBC14F00D741AE /* HYView.h */,
 				627604CB1CCBC14F00D741AE /* HYView.m */,
 				62D7419620FDBD070067EF2D /* MColorDefine.h */,
@@ -131,6 +138,7 @@
 		627604B31CCBC13900D741AE /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				625A69252109A82600234CF0 /* wenli.jpg */,
 				62EAF7AF210889310053881D /* 5.jpg */,
 				62C758701D19ACE300483D3A /* 1.jpg */,
 				62C758711D19ACE300483D3A /* fgjx.png */,
@@ -202,6 +210,7 @@
 			files = (
 				627604C31CCBC13900D741AE /* LaunchScreen.storyboard in Resources */,
 				62EAF7B0210889310053881D /* 5.jpg in Resources */,
+				625A69262109A82600234CF0 /* wenli.jpg in Resources */,
 				62C758751D19ACE300483D3A /* fgjx.png in Resources */,
 				62C758741D19ACE300483D3A /* 1.jpg in Resources */,
 				62C758761D19ACE300483D3A /* mdh.jpg in Resources */,
@@ -220,6 +229,7 @@
 			files = (
 				62C7587A1D19AFDF00483D3A /* MainViewController.m in Sources */,
 				627604B81CCBC13900D741AE /* AppDelegate.m in Sources */,
+				625A69292109AB4500234CF0 /* UIImage+Extend.m in Sources */,
 				62D7419520FDBCC00067EF2D /* MColor.m in Sources */,
 				62C758801D19B58D00483D3A /* PaintViewController.m in Sources */,
 				62A277612080AA5D00196C1A /* MTLView.m in Sources */,

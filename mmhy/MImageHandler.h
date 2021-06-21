@@ -16,6 +16,7 @@
 @interface MImageHandler : NSObject
 
 @property (nonatomic, strong) UIImage *sourceImage;
+@property (nonatomic, strong) UIImage *wenliImage;
 @property (nonatomic, assign, readonly) NSInteger width;
 @property (nonatomic, assign, readonly) NSInteger height;
 @property (nonatomic, assign) BOOL animated;
